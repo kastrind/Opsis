@@ -5,8 +5,8 @@
 #include <chrono>
 #include <gdiplus.h>
 
-#define SCREENWIDTH  800
-#define SCREENHEIGHT 600
+#define SCREENWIDTH  640
+#define SCREENHEIGHT 480
 
 static float fElapsedTime;
 
