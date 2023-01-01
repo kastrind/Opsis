@@ -30,9 +30,9 @@ class Engine3D
 {
 	public:
 
-		Engine3D(int w, int h, std::wstring appName);
+		Engine3D(HWND hWnd, int width=320, int height=240, float fNear=0.1f, float fFar = 1000.0f, float fFov = 90.0f);
 
-		void Start();
+		std::thread Start();
 
 		// User MUST OVERRIDE THESE!
 		virtual bool OnUserCreate() = 0;
@@ -42,14 +42,26 @@ class Engine3D
 		virtual bool OnUserDestroy();
 
 		void MultiplyMatrixVector(vec3d &in, vec3d &o, mat4x4 &m);
-
-		std::wstring appName;
-
-		ConsoleCanvas cCanvas;
-	
-	private:
+		mat4x4 getProjMatrix();
+		mat4x4 getRotMatrixZ(float fTheta);
+		mat4x4 getRotMatrixX(float fTheta);
 
 		std::atomic<bool> bAtomActive;
+
+	protected:
+
+		HWND hWnd;
+		int width;
+		int height;
+		float fNear;
+		float fFar;
+		float fFov;
+		float fAspectRatio;
+		float fFovRad;
+
+		mat4x4 matProj;
+	
+	private:
 
 		void EngineThread();
 

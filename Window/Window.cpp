@@ -4,9 +4,110 @@
 #include <tchar.h> // Or: remove this
 #include <chrono>
 #include <gdiplus.h>
+#include "Engine3D.h"
 
-#define SCREENWIDTH  640
-#define SCREENHEIGHT 480
+#define SCREENWIDTH  240
+#define SCREENHEIGHT 240
+#define WINDOWNAME "Opsis"
+
+std::vector<triangle> trianglesToProject;
+
+class myEngine3D : public Engine3D {
+public:
+    myEngine3D(HWND hWnd, int width, int height)
+        : Engine3D(hWnd, width, height) {
+    }
+    bool OnUserCreate() override
+    {
+        meshCube.tris = {
+            // SOUTH
+            {0.0f, 0.0f, 0.0f,      0.0f, 1.0f, 0.0f,       1.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 0.0f, 0.0f},
+
+            // EAST
+            {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 1.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 1.0f},
+
+            // NORTH
+            {1.0f, 0.0f, 1.0f,      1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 1.0f},
+            {1.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f},
+
+            // WEST
+            {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f},
+
+            // TOP
+            {0.0f, 1.0f, 0.0f,      0.0f, 1.0f, 1.0f,       1.0f, 1.0f, 1.0f},
+            {0.0f, 1.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 1.0f, 0.0f},
+
+            // BOTTOM
+            {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
+            {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
+        };
+
+        return true;
+    }
+    bool OnUserUpdate(float fElapsedTime) override
+    {
+        fTheta += 1.0f * fElapsedTime;
+
+        std::vector<triangle> newTrianglesToProject;
+        // Project Triangles
+        for (auto tri : meshCube.tris)
+        {
+            triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
+
+            // Rotate Z
+            mat4x4 matRotZ = getRotMatrixZ(fTheta);
+            MultiplyMatrixVector(tri.p[0], triRotatedZ.p[0], matRotZ);
+            MultiplyMatrixVector(tri.p[1], triRotatedZ.p[1], matRotZ);
+            MultiplyMatrixVector(tri.p[2], triRotatedZ.p[2], matRotZ);
+
+            // Rotate X
+            mat4x4 matRotX = getRotMatrixX(fTheta);
+            MultiplyMatrixVector(triRotatedZ.p[0], triRotatedZX.p[0], matRotX);
+            MultiplyMatrixVector(triRotatedZ.p[1], triRotatedZX.p[1], matRotX);
+            MultiplyMatrixVector(triRotatedZ.p[2], triRotatedZX.p[2], matRotX);
+
+            // Translate further along Z
+            triTranslated = triRotatedZX;
+            triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
+            triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
+            triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
+
+            MultiplyMatrixVector(triTranslated.p[0], triProjected.p[0], matProj);
+            MultiplyMatrixVector(triTranslated.p[1], triProjected.p[1], matProj);
+            MultiplyMatrixVector(triTranslated.p[2], triProjected.p[2], matProj);
+
+            // Scale into view
+            triProjected.p[0].x += 1.0f; triProjected.p[0].y += 1.0f;
+            triProjected.p[1].x += 1.0f; triProjected.p[1].y += 1.0f;
+            triProjected.p[2].x += 1.0f; triProjected.p[2].y += 1.0f;
+
+            triProjected.p[0].x *= 0.5f * (float)width;
+            triProjected.p[0].y *= 0.5f * (float)height;
+            triProjected.p[1].x *= 0.5f * (float)width;
+            triProjected.p[1].y *= 0.5f * (float)height;
+            triProjected.p[2].x *= 0.5f * (float)width;
+            triProjected.p[2].y *= 0.5f * (float)height;
+
+            newTrianglesToProject.push_back(triProjected);
+
+        }
+        trianglesToProject = newTrianglesToProject;
+
+        return true;
+    }
+
+private:
+
+    mesh meshCube;
+
+    float fTheta = 0;
+
+};
+
+myEngine3D* myEng3D;
 
 static float fElapsedTime;
 
@@ -21,18 +122,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_PAINT:
     {
-        static const TCHAR* HelloWorld = L"Hello, World!!!!";
-        wchar_t s[256];
-        swprintf_s(s, 256, L"%s %3.2f", HelloWorld, 1.0f / fElapsedTime);
-        // or: const WCHAR* HelloWorld = L"Hello, World!";
-
         PAINTSTRUCT pntStruct = { 0 };
         HDC hdc = BeginPaint(hWnd, &pntStruct);
-        //RECT rc = RECT{ 0, 0, 800, 600 };
-        //HBRUSH hbr = CreateSolidBrush(RGB(0, 0, 0));
-        //FillRect(hdc, &rc, hbr);
-        //TextOut(hdc, 5, 5, s, _tcslen(s));
-        // or: TextOutW(hdc, 5, 5, HelloWorld, lstrlenW(HelloWorld));
 
         draw(hdc);
 
@@ -54,13 +145,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_DESTROY:
     {
+        myEng3D->bAtomActive = false;
         PostQuitMessage(0);
         break;
     }
 
     case WM_CLOSE:
     {
-        //...
+        myEng3D->bAtomActive = false;
+        PostQuitMessage(0);
         break;
     }
 
@@ -111,21 +204,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HWND hCreateWin = CreateWindow( // Or: CreateWindowW()
         WindowClass,
-        TEXT("NAME OF WINDOW"), // Or: L"NAME OF WINDOW"
+        TEXT(WINDOWNAME), // Or: L"NAME OF WINDOW"
         WS_VISIBLE | WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
         SCREENWIDTH,
         SCREENHEIGHT,
-        //CW_USEDEFAULT,//WIDTH:[TODO]->Make custom width to fit window
-        //CW_USEDEFAULT,//HEIGHT:[TODO]->Make custom width to fit window
         0,
         0,
         hInstance,
         0
     );
-
-    
 
     if (!hCreateWin)
     {
@@ -139,6 +228,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     auto tp1 = std::chrono::system_clock::now();
     auto tp2 = std::chrono::system_clock::now();
 
+    myEng3D = new myEngine3D(hCreateWin, SCREENWIDTH, SCREENHEIGHT);
+    std::thread t = myEng3D->Start();
+
     MSG message;
     while (GetMessage(&message, NULL, 0, 0) > 0)
     {
@@ -150,45 +242,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         TranslateMessage(&message);
         DispatchMessage(&message); 
-        RedrawWindow(hCreateWin, NULL, NULL, RDW_INVALIDATE);
     };
-
+    
+    t.join();
     Gdiplus::GdiplusShutdown(gdiplusToken);
     return 0;
 };
 
 void draw(HDC hdc) {
     Gdiplus::Graphics gf(hdc);
-    Gdiplus::Pen pen(Gdiplus::Color(255, 128+rand() % 100, 128+rand() % 100, 0));
-    Gdiplus::SolidBrush brush(Gdiplus::Color(255, 0, 255, 0));
+    Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0));
+    Gdiplus::SolidBrush brushGreen(Gdiplus::Color(255, 0, 255, 0));
     Gdiplus::SolidBrush brushBlack(Gdiplus::Color(255,0,0,0));
-    //gf.FillRectangle(&brushBlack, 0, 0, 800, 600);
 
     Gdiplus::Bitmap bmp(SCREENWIDTH, SCREENHEIGHT);
     Gdiplus::Graphics* gf2 = Gdiplus::Graphics::FromImage(&bmp);
 
-    //gf.Clear(RGB(0,0,0));
-    gf2->FillRectangle(&brushBlack, 0, 0, 800, 600);
-    gf2->DrawLine(&pen, 0 + rand() % 2, 0 + rand() % 20, 500, 500);
-    // Create an array of Point objects that define the lines to draw.
-    Gdiplus::Point point1(50 + rand() % 100, 50+rand()%100);
-    Gdiplus::Point point2(100 + rand() % 100, 200 + rand() % 100);
-    Gdiplus::Point point3(200 + rand() % 100, 250 + rand() % 100);
-
-    Gdiplus::Point points[4] = { point1, point2, point3, point1 };
-    Gdiplus::Point* pPoints = points;
-    gf2->DrawLines(&pen, pPoints, 4);
-    gf2->DrawLines(&pen, pPoints, 2);
+    gf2->FillRectangle(&brushBlack, 0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     wchar_t s[256];
+
+    for (auto tri : trianglesToProject)
+    {
+        Gdiplus::PointF point1(tri.p[0].x, tri.p[0].y);
+        Gdiplus::PointF point2(tri.p[1].x, tri.p[1].y);
+        Gdiplus::PointF point3(tri.p[2].x, tri.p[2].y);
+        Gdiplus::PointF points[4] = {point1, point2, point3, point1};
+        
+        gf2->DrawLines(&pen, points, 4);
+    }
+
     swprintf_s(s, 256, L"FPS: %3.2f", 1.0f / fElapsedTime);
 
-    Gdiplus::FontFamily   fontFamily(L"Arial");
-    Gdiplus::Font         font(&fontFamily, 12, Gdiplus::FontStyleBold, Gdiplus::UnitPoint);
-    Gdiplus::PointF      pointF(30.0f, 10.0f);
-    Gdiplus::SolidBrush   solidBrush(Gdiplus::Color(255, 0, 0, 255));
+    Gdiplus::FontFamily fontFamily(L"Arial");
+    Gdiplus::Font font(&fontFamily, 12, Gdiplus::FontStyleBold, Gdiplus::UnitPoint);
+    Gdiplus::PointF pointF(30.0f, 10.0f);
+    Gdiplus::SolidBrush solidBrush(Gdiplus::Color(255, 0, 0, 255));
 
-    gf2->DrawString(s, -1, &font, pointF, &brush);
+    gf2->DrawString(s, -1, &font, pointF, &brushGreen);
     gf.DrawImage(&bmp, 0, 0, SCREENWIDTH, SCREENHEIGHT);
+
+    delete gf2;
 
 }

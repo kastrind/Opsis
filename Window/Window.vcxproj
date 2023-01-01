@@ -141,7 +141,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ConsoleCanvas.cpp" />
-    <ClCompile Include="DrawPixelsOld.cpp" />
     <ClCompile Include="Engine3D.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>

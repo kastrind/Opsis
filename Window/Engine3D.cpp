@@ -1,18 +1,28 @@
 #include "Engine3D.h"
 
-Engine3D::Engine3D(int w, int h, std::wstring appName=L"Default")
-	: cCanvas(w, h) {
-	Engine3D::appName = appName;
+Engine3D::Engine3D(HWND hWnd, int width, int height, float fNear, float fFar, float fFov)
+			: hWnd(hWnd), width(width), height(height), fNear(fNear), fFar(fFar), fFov(fFov)
+{
+	fAspectRatio = (float)width / (float)height;
+	fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159f);
+
+	// Projection Matrix
+	matProj.m[0][0] = fAspectRatio * fFovRad;
+	matProj.m[1][1] = fFovRad;
+	matProj.m[2][2] = fFar / (fFar - fNear);
+	matProj.m[3][2] = (-fFar * fNear) / (fFar - fNear);
+	matProj.m[2][3] = 1.0f;
+	matProj.m[3][3] = 0.0f;
+
 }
 
-void Engine3D::Start() {
+std::thread Engine3D::Start() {
 	bAtomActive = true;
 
 	// Start the thread
 	std::thread t = std::thread::thread(&Engine3D::EngineThread, this);
-
-	// Wait for thread to be exited
-	t.join();
+	
+	return t;
 }
 
 void Engine3D::EngineThread()
@@ -35,15 +45,11 @@ void Engine3D::EngineThread()
 			tp1 = tp2;
 			float fElapsedTime = elapsedTime.count();
 
-
 			// Handle Frame Update
 			if (!OnUserUpdate(fElapsedTime))
 				bAtomActive = false;
 
-			// Update Title & Present Screen Buffer
-			wchar_t s[256];
-			swprintf_s(s, 256, L"%s - FPS: %3.2f", appName.c_str(), 1.0f / fElapsedTime);
-			SetConsoleTitle(s);
+			RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
 
 		}
 
@@ -75,5 +81,34 @@ void Engine3D::MultiplyMatrixVector(vec3d& in, vec3d& out, mat4x4& m) {
 	if (w != 0.0f) {
 		out.x /= w; out.y /= w; out.z /= w;
 	}
+}
+
+mat4x4 Engine3D::getProjMatrix()
+{
+	return matProj;
+}
+
+mat4x4 Engine3D::getRotMatrixZ(float fTheta)
+{
+	mat4x4 matRotZ;
+	matRotZ.m[0][0] = cosf(fTheta);
+	matRotZ.m[0][1] = sinf(fTheta);
+	matRotZ.m[1][0] = -sinf(fTheta);
+	matRotZ.m[1][1] = cosf(fTheta);
+	matRotZ.m[2][2] = 1;
+	matRotZ.m[3][3] = 1;
+	return matRotZ;
+}
+
+mat4x4 Engine3D::getRotMatrixX(float fTheta)
+{
+	mat4x4 matRotX;
+	matRotX.m[0][0] = 1;
+	matRotX.m[1][1] = cosf(fTheta * 0.5f);
+	matRotX.m[1][2] = sinf(fTheta * 0.5f);
+	matRotX.m[2][1] = -sinf(fTheta * 0.5f);
+	matRotX.m[2][2] = cosf(fTheta * 0.5f);;
+	matRotX.m[3][3] = 1;
+	return matRotX;
 }
 
