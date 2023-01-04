@@ -8,41 +8,45 @@ OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
 }
 bool OpsisEngine3D::OnUserCreate()
 {
-    meshCube.tris = {
-        // SOUTH
-        {0.0f, 0.0f, 0.0f,      0.0f, 1.0f, 0.0f,       1.0f, 1.0f, 0.0f},
-        {0.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 0.0f, 0.0f},
+    //meshCube.tris = {
+    //    // SOUTH
+    //    {0.0f, 0.0f, 0.0f,      0.0f, 1.0f, 0.0f,       1.0f, 1.0f, 0.0f},
+    //    {0.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 0.0f, 0.0f},
 
-        // EAST
-        {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 1.0f, 1.0f},
-        {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 1.0f},
+    //    //// EAST
+    //    {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 1.0f, 1.0f},
+    //    {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 1.0f},
 
-        // NORTH
-        {1.0f, 0.0f, 1.0f,      1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 1.0f},
-        {1.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f},
+    //    //// NORTH
+    //    {1.0f, 0.0f, 1.0f,      1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 1.0f},
+    //    {1.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f},
 
-        // WEST
-        {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 1.0f, 0.0f},
-        {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f},
+    //    //// WEST
+    //    {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 1.0f, 0.0f},
+    //    {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f},
 
-        // TOP
-        {0.0f, 1.0f, 0.0f,      0.0f, 1.0f, 1.0f,       1.0f, 1.0f, 1.0f},
-        {0.0f, 1.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 1.0f, 0.0f},
+    //    //// TOP
+    //    {0.0f, 1.0f, 0.0f,      0.0f, 1.0f, 1.0f,       1.0f, 1.0f, 1.0f},
+    //    {0.0f, 1.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 1.0f, 0.0f},
 
-        // BOTTOM
-        {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
-        {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
-    };
+    //    //// BOTTOM
+    //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
+    //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
+    //};
+    loadObj("assets/VideoShip.obj", meshCube);
 
     return true;
 }
 bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 {
+    if (bLockRaster) return true;
+
     fTheta += 1.0f * fElapsedTime;
 
-    std::vector<triangle> newTrianglesToProject;
+    std::vector<triangle> trianglesToProject;
+
     // Project Triangles
-    for (auto tri : meshCube.tris)
+    for (auto &tri : meshCube.tris)
     {
         triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
 
@@ -60,9 +64,9 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
         // Translate further along Z
         triTranslated = triRotatedZX;
-        triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
-        triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
-        triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
+        triTranslated.p[0].z = triRotatedZX.p[0].z + 10.0f;
+        triTranslated.p[1].z = triRotatedZX.p[1].z + 10.0f;
+        triTranslated.p[2].z = triRotatedZX.p[2].z + 10.0f;
 
         vec3d normal, line1, line2;
         line1.x = triTranslated.p[1].x - triTranslated.p[0].x;
@@ -96,7 +100,6 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             lightLine.z = triTranslated.p[0].z - light.z;
 
             float lightLength = sqrt(lightLine.x * lightLine.x + lightLine.y * lightLine.y + lightLine.z * lightLine.z);
-
             lightLine.x /= lightLength; lightLine.y /= lightLength; lightLine.z /= lightLength;
 
             float lightLineNormalDotProduct = lightLine.x * normal.x + lightLine.y * normal.y + lightLine.z * normal.z;
@@ -122,11 +125,23 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             triProjected.luminance = abs(triTranslated.luminance);
 
-            newTrianglesToProject.push_back(triProjected);
+            trianglesToProject.push_back(triProjected);
         }
 
     }
-    trianglesToProject = newTrianglesToProject;
+
+    //Sort triangles from back to front
+    std::sort(trianglesToProject.begin(), trianglesToProject.end(), [](triangle& t1, triangle& t2)
+        {
+            float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
+            float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
+            return z1 > z2;
+        });
+
+    if (!bLockRaster)
+    {
+        trianglesToRaster = trianglesToProject;
+    }
 
     return true;
 }

@@ -4,6 +4,9 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <fstream>
+#include <strstream>
+#include <algorithm>
 #include "ConsoleCanvas.h"
 
 struct vec3d
@@ -48,7 +51,11 @@ class Engine3D
 		mat4x4 getRotMatrixZ(float fTheta);
 		mat4x4 getRotMatrixX(float fTheta);
 
+		bool loadObj(std::string sFilename, mesh& outMesh);
+
 		std::atomic<bool> bAtomActive;
+
+		std::atomic<bool> bLockRaster = false;
 
 		float fElapsedTime;
 

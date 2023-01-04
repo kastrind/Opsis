@@ -18,6 +18,7 @@ Engine3D::Engine3D(HWND hWnd, int width, int height, float fNear, float fFar, fl
 
 std::thread Engine3D::Start() {
 	bAtomActive = true;
+	bLockRaster = false;
 
 	// Start the thread
 	std::thread t = std::thread::thread(&Engine3D::EngineThread, this);
@@ -39,17 +40,18 @@ void Engine3D::EngineThread()
 		// Run as fast as possible
 		while (bAtomActive)
 		{
+
 			// Handle Timing
 			tp2 = std::chrono::system_clock::now();
 			std::chrono::duration<float> elapsedTime = tp2 - tp1;
 			tp1 = tp2;
-			fElapsedTime = elapsedTime.count();;
+			fElapsedTime = elapsedTime.count();
 
 			// Handle Frame Update
 			if (!OnUserUpdate(fElapsedTime))
 				bAtomActive = false;
 
-			RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
+			if (!bLockRaster) RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
 
 		}
 
@@ -110,5 +112,39 @@ mat4x4 Engine3D::getRotMatrixX(float fTheta)
 	matRotX.m[2][2] = cosf(fTheta * 0.5f);;
 	matRotX.m[3][3] = 1;
 	return matRotX;
+}
+
+bool Engine3D::loadObj(std::string sFilename, mesh& outMesh) {
+	std::ifstream f(sFilename);
+	if (!f.is_open())
+		return false;
+
+	std::vector<vec3d> verts;
+
+	while (!f.eof())
+	{
+		char line[128];
+		f.getline(line, 128);
+
+		std::strstream s;
+		s << line;
+
+		char junk;
+		if (line[0] == 'v')
+		{
+			vec3d v;
+			s >> junk >> v.x >> v.y >> v.z;
+			verts.push_back(v);
+		}
+
+		if (line[0] == 'f')
+		{
+			int f[3];
+			s >> junk >> f[0] >> f[1] >> f[2];
+			outMesh.tris.push_back({ verts[f[0] - 1], verts[f[1] - 1], verts[f[2] - 1] });
+		}
+	}
+	return false;
+
 }
 

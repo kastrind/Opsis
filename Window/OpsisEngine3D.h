@@ -10,7 +10,7 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override;
 
-    std::vector<triangle> trianglesToProject;
+    std::vector<triangle> trianglesToRaster;
     
 private:
 
