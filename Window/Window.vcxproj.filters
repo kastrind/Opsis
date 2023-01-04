@@ -24,12 +24,18 @@
     <ClCompile Include="Engine3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OpsisEngine3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleCanvas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpsisEngine3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

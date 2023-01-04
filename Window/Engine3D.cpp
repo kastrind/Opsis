@@ -43,7 +43,7 @@ void Engine3D::EngineThread()
 			tp2 = std::chrono::system_clock::now();
 			std::chrono::duration<float> elapsedTime = tp2 - tp1;
 			tp1 = tp2;
-			float fElapsedTime = elapsedTime.count();
+			fElapsedTime = elapsedTime.count();;
 
 			// Handle Frame Update
 			if (!OnUserUpdate(fElapsedTime))

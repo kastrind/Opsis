@@ -48,6 +48,8 @@ class Engine3D
 
 		std::atomic<bool> bAtomActive;
 
+		float fElapsedTime;
+
 	protected:
 
 		HWND hWnd;

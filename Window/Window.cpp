@@ -4,110 +4,13 @@
 #include <tchar.h> // Or: remove this
 #include <chrono>
 #include <gdiplus.h>
-#include "Engine3D.h"
+#include "OpsisEngine3D.h"
 
-#define SCREENWIDTH  240
-#define SCREENHEIGHT 240
+#define SCREENWIDTH  600
+#define SCREENHEIGHT 600
 #define WINDOWNAME "Opsis"
 
-std::vector<triangle> trianglesToProject;
-
-class myEngine3D : public Engine3D {
-public:
-    myEngine3D(HWND hWnd, int width, int height)
-        : Engine3D(hWnd, width, height) {
-    }
-    bool OnUserCreate() override
-    {
-        meshCube.tris = {
-            // SOUTH
-            {0.0f, 0.0f, 0.0f,      0.0f, 1.0f, 0.0f,       1.0f, 1.0f, 0.0f},
-            {0.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 0.0f, 0.0f},
-
-            // EAST
-            {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 1.0f, 1.0f},
-            {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 1.0f},
-
-            // NORTH
-            {1.0f, 0.0f, 1.0f,      1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 1.0f},
-            {1.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f},
-
-            // WEST
-            {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 1.0f, 0.0f},
-            {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f},
-
-            // TOP
-            {0.0f, 1.0f, 0.0f,      0.0f, 1.0f, 1.0f,       1.0f, 1.0f, 1.0f},
-            {0.0f, 1.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 1.0f, 0.0f},
-
-            // BOTTOM
-            {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
-            {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
-        };
-
-        return true;
-    }
-    bool OnUserUpdate(float fElapsedTime) override
-    {
-        fTheta += 1.0f * fElapsedTime;
-
-        std::vector<triangle> newTrianglesToProject;
-        // Project Triangles
-        for (auto tri : meshCube.tris)
-        {
-            triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
-
-            // Rotate Z
-            mat4x4 matRotZ = getRotMatrixZ(fTheta);
-            MultiplyMatrixVector(tri.p[0], triRotatedZ.p[0], matRotZ);
-            MultiplyMatrixVector(tri.p[1], triRotatedZ.p[1], matRotZ);
-            MultiplyMatrixVector(tri.p[2], triRotatedZ.p[2], matRotZ);
-
-            // Rotate X
-            mat4x4 matRotX = getRotMatrixX(fTheta);
-            MultiplyMatrixVector(triRotatedZ.p[0], triRotatedZX.p[0], matRotX);
-            MultiplyMatrixVector(triRotatedZ.p[1], triRotatedZX.p[1], matRotX);
-            MultiplyMatrixVector(triRotatedZ.p[2], triRotatedZX.p[2], matRotX);
-
-            // Translate further along Z
-            triTranslated = triRotatedZX;
-            triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
-            triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
-            triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
-
-            MultiplyMatrixVector(triTranslated.p[0], triProjected.p[0], matProj);
-            MultiplyMatrixVector(triTranslated.p[1], triProjected.p[1], matProj);
-            MultiplyMatrixVector(triTranslated.p[2], triProjected.p[2], matProj);
-
-            // Scale into view
-            triProjected.p[0].x += 1.0f; triProjected.p[0].y += 1.0f;
-            triProjected.p[1].x += 1.0f; triProjected.p[1].y += 1.0f;
-            triProjected.p[2].x += 1.0f; triProjected.p[2].y += 1.0f;
-
-            triProjected.p[0].x *= 0.5f * (float)width;
-            triProjected.p[0].y *= 0.5f * (float)height;
-            triProjected.p[1].x *= 0.5f * (float)width;
-            triProjected.p[1].y *= 0.5f * (float)height;
-            triProjected.p[2].x *= 0.5f * (float)width;
-            triProjected.p[2].y *= 0.5f * (float)height;
-
-            newTrianglesToProject.push_back(triProjected);
-
-        }
-        trianglesToProject = newTrianglesToProject;
-
-        return true;
-    }
-
-private:
-
-    mesh meshCube;
-
-    float fTheta = 0;
-
-};
-
-myEngine3D* myEng3D;
+OpsisEngine3D* opsisEng3D;
 
 static float fElapsedTime;
 
@@ -145,14 +48,14 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_DESTROY:
     {
-        myEng3D->bAtomActive = false;
+        opsisEng3D->bAtomActive = false;
         PostQuitMessage(0);
         break;
     }
 
     case WM_CLOSE:
     {
-        myEng3D->bAtomActive = false;
+        opsisEng3D->bAtomActive = false;
         PostQuitMessage(0);
         break;
     }
@@ -228,8 +131,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     auto tp1 = std::chrono::system_clock::now();
     auto tp2 = std::chrono::system_clock::now();
 
-    myEng3D = new myEngine3D(hCreateWin, SCREENWIDTH, SCREENHEIGHT);
-    std::thread t = myEng3D->Start();
+    opsisEng3D = new OpsisEngine3D(hCreateWin, SCREENWIDTH, SCREENHEIGHT);
+    std::thread t = opsisEng3D->Start();
 
     MSG message;
     while (GetMessage(&message, NULL, 0, 0) > 0)
@@ -252,7 +155,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 void draw(HDC hdc) {
     Gdiplus::Graphics gf(hdc);
     Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0));
-    Gdiplus::SolidBrush brushGreen(Gdiplus::Color(255, 0, 255, 0));
+    Gdiplus::SolidBrush brushGreen(Gdiplus::Color(192, 0, 192, 0));
     Gdiplus::SolidBrush brushBlack(Gdiplus::Color(255,0,0,0));
 
     Gdiplus::Bitmap bmp(SCREENWIDTH, SCREENHEIGHT);
@@ -262,17 +165,22 @@ void draw(HDC hdc) {
 
     wchar_t s[256];
 
-    for (auto tri : trianglesToProject)
-    {
-        Gdiplus::PointF point1(tri.p[0].x, tri.p[0].y);
-        Gdiplus::PointF point2(tri.p[1].x, tri.p[1].y);
-        Gdiplus::PointF point3(tri.p[2].x, tri.p[2].y);
-        Gdiplus::PointF points[4] = {point1, point2, point3, point1};
-        
-        gf2->DrawLines(&pen, points, 4);
-    }
+    if (opsisEng3D != nullptr) {
+        //for (int i = 0; i < 10; i++) {
+            for (auto tri : opsisEng3D->trianglesToProject)
+            {
+                Gdiplus::PointF point1(tri.p[0].x, tri.p[0].y);
+                Gdiplus::PointF point2(tri.p[1].x, tri.p[1].y);
+                Gdiplus::PointF point3(tri.p[2].x, tri.p[2].y);
+                Gdiplus::PointF points[4] = { point1, point2, point3, point1 };
 
-    swprintf_s(s, 256, L"FPS: %3.2f", 1.0f / fElapsedTime);
+                gf2->DrawLines(&pen, points, 4);
+                //gf2->FillPolygon(&brushGreen, points, 4);
+            }
+        //}
+
+    swprintf_s(s, 256, L"3DLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);
+    }
 
     Gdiplus::FontFamily fontFamily(L"Arial");
     Gdiplus::Font font(&fontFamily, 12, Gdiplus::FontStyleBold, Gdiplus::UnitPoint);
