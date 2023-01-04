@@ -154,7 +154,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 void draw(HDC hdc) {
     Gdiplus::Graphics gf(hdc);
-    Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0));
+    Gdiplus::Pen pen(Gdiplus::Color(0, 0, 0));
     Gdiplus::SolidBrush brushGreen(Gdiplus::Color(192, 0, 192, 0));
     Gdiplus::SolidBrush brushBlack(Gdiplus::Color(255,0,0,0));
 
@@ -166,7 +166,7 @@ void draw(HDC hdc) {
     wchar_t s[256];
 
     if (opsisEng3D != nullptr) {
-        //for (int i = 0; i < 10; i++) {
+        //for (int i = 0; i < 1000; i++) {
             for (auto tri : opsisEng3D->trianglesToProject)
             {
                 Gdiplus::PointF point1(tri.p[0].x, tri.p[0].y);
@@ -174,12 +174,14 @@ void draw(HDC hdc) {
                 Gdiplus::PointF point3(tri.p[2].x, tri.p[2].y);
                 Gdiplus::PointF points[4] = { point1, point2, point3, point1 };
 
+                Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, 255 * tri.luminance, 255 * tri.luminance, 255 * tri.luminance));
+
                 gf2->DrawLines(&pen, points, 4);
-                //gf2->FillPolygon(&brushGreen, points, 4);
+                gf2->FillPolygon(&brushShaded, points, 4);
             }
         //}
 
-    swprintf_s(s, 256, L"3DLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);
+    swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);
     }
 
     Gdiplus::FontFamily fontFamily(L"Arial");

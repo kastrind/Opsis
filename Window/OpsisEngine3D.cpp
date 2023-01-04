@@ -89,6 +89,20 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
         // Only render visible triangles, i.e. whose normals have negative dot product with the camera line
         if (camLineNormalDotProduct < 0.0f)
         {
+            // Illumination
+            vec3d lightLine;
+            lightLine.x = triTranslated.p[0].x - light.x;
+            lightLine.y = triTranslated.p[0].y - light.y;
+            lightLine.z = triTranslated.p[0].z - light.z;
+
+            float lightLength = sqrt(lightLine.x * lightLine.x + lightLine.y * lightLine.y + lightLine.z * lightLine.z);
+
+            lightLine.x /= lightLength; lightLine.y /= lightLength; lightLine.z /= lightLength;
+
+            float lightLineNormalDotProduct = lightLine.x * normal.x + lightLine.y * normal.y + lightLine.z * normal.z;
+
+            triTranslated.luminance = lightLineNormalDotProduct;
+
             // Project triangles from 3D -> 2D
             MultiplyMatrixVector(triTranslated.p[0], triProjected.p[0], matProj);
             MultiplyMatrixVector(triTranslated.p[1], triProjected.p[1], matProj);
@@ -105,6 +119,8 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             triProjected.p[1].y *= 0.5f * (float)height;
             triProjected.p[2].x *= 0.5f * (float)width;
             triProjected.p[2].y *= 0.5f * (float)height;
+
+            triProjected.luminance = abs(triTranslated.luminance);
 
             newTrianglesToProject.push_back(triProjected);
         }

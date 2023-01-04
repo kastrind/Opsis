@@ -14,6 +14,8 @@ struct vec3d
 struct triangle
 {
 	vec3d p[3];
+
+	float luminance = 0.0f;
 };
 
 struct mesh
