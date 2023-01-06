@@ -140,7 +140,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleCanvas.cpp" />
     <ClCompile Include="Engine3D.cpp" />
     <ClCompile Include="OpsisEngine3D.cpp" />
     <ClCompile Include="Window.cpp" />

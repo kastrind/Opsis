@@ -6,8 +6,8 @@
 #include <gdiplus.h>
 #include "OpsisEngine3D.h"
 
-#define SCREENWIDTH  600
-#define SCREENHEIGHT 600
+#define SCREENWIDTH  800
+#define SCREENHEIGHT 800
 #define WINDOWNAME "Opsis"
 
 OpsisEngine3D* opsisEng3D;

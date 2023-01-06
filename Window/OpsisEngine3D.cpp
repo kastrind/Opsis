@@ -33,7 +33,7 @@ bool OpsisEngine3D::OnUserCreate()
     //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
     //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
     //};
-    loadObj("assets/VideoShip.obj", meshCube);
+    loadObj("assets/teapot.obj", meshCube);
 
     return true;
 }
@@ -45,85 +45,57 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
     std::vector<triangle> trianglesToProject;
 
-    // Project Triangles
+    // Project triangles into camera view
     for (auto &tri : meshCube.tris)
     {
         triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
 
         // Rotate in Z
         mat4x4 matRotZ = getRotMatrixZ(fTheta);
-        MultiplyMatrixVector(tri.p[0], triRotatedZ.p[0], matRotZ);
-        MultiplyMatrixVector(tri.p[1], triRotatedZ.p[1], matRotZ);
-        MultiplyMatrixVector(tri.p[2], triRotatedZ.p[2], matRotZ);
+        triRotatedZ = tri * matRotZ;
 
         // Rotate in X
         mat4x4 matRotX = getRotMatrixX(fTheta);
-        MultiplyMatrixVector(triRotatedZ.p[0], triRotatedZX.p[0], matRotX);
-        MultiplyMatrixVector(triRotatedZ.p[1], triRotatedZX.p[1], matRotX);
-        MultiplyMatrixVector(triRotatedZ.p[2], triRotatedZX.p[2], matRotX);
+        triRotatedZX = triRotatedZ * matRotX;
 
         // Translate further along Z
         triTranslated = triRotatedZX;
-        triTranslated.p[0].z = triRotatedZX.p[0].z + 10.0f;
-        triTranslated.p[1].z = triRotatedZX.p[1].z + 10.0f;
-        triTranslated.p[2].z = triRotatedZX.p[2].z + 10.0f;
+        triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 10.0f };
 
         vec3d normal, line1, line2;
-        line1.x = triTranslated.p[1].x - triTranslated.p[0].x;
-        line1.y = triTranslated.p[1].y - triTranslated.p[0].y;
-        line1.z = triTranslated.p[1].z - triTranslated.p[0].z;
-        line2.x = triTranslated.p[2].x - triTranslated.p[0].x;
-        line2.y = triTranslated.p[2].y - triTranslated.p[0].y;
-        line2.z = triTranslated.p[2].z - triTranslated.p[0].z;
+        line1 = triTranslated.p[1] - triTranslated.p[0];
+        line2 = triTranslated.p[2] - triTranslated.p[0];
 
-        normal.x = line1.y * line2.z - line1.z * line2.y;
-        normal.y = line1.z * line2.x - line1.x * line2.z;
-        normal.z = line1.x * line2.y - line1.y * line2.x;
-
-        float normalLength = sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-        normal.x /= normalLength; normal.y /= normalLength; normal.z /= normalLength;
+        normal = line1.getNormal(line2);
+        normal.normalize();
 
         vec3d camLine;
-        camLine.x = triTranslated.p[0].x - vCamera.x;
-        camLine.y = triTranslated.p[0].y - vCamera.y;
-        camLine.z = triTranslated.p[0].z - vCamera.z;
-
-        float camLineNormalDotProduct = normal.x * camLine.x + normal.y * camLine.y + normal.z * camLine.z;
+        camLine = triTranslated.p[0] - vCamera;
 
         // Only render visible triangles, i.e. whose normals have negative dot product with the camera line
-        if (camLineNormalDotProduct < 0.0f)
+        if (normal.getDotProduct(camLine) < 0.0f)
         {
             // Illumination
             vec3d lightLine;
-            lightLine.x = triTranslated.p[0].x - light.x;
-            lightLine.y = triTranslated.p[0].y - light.y;
-            lightLine.z = triTranslated.p[0].z - light.z;
+            lightLine = triTranslated.p[0] - light;
+            lightLine.normalize();
 
-            float lightLength = sqrt(lightLine.x * lightLine.x + lightLine.y * lightLine.y + lightLine.z * lightLine.z);
-            lightLine.x /= lightLength; lightLine.y /= lightLength; lightLine.z /= lightLength;
-
-            float lightLineNormalDotProduct = lightLine.x * normal.x + lightLine.y * normal.y + lightLine.z * normal.z;
-
-            triTranslated.luminance = lightLineNormalDotProduct;
+            triTranslated.luminance = abs(normal.getDotProduct(lightLine));
 
             // Project triangles from 3D -> 2D
-            MultiplyMatrixVector(triTranslated.p[0], triProjected.p[0], matProj);
-            MultiplyMatrixVector(triTranslated.p[1], triProjected.p[1], matProj);
-            MultiplyMatrixVector(triTranslated.p[2], triProjected.p[2], matProj);
+            triTranslated.p[0].w = 1;
+            triTranslated.p[1].w = 1;
+            triTranslated.p[2].w = 1;
+            triProjected = triTranslated * matProj;
+            if (triProjected.p[0].w>0) triProjected.p[0] = triProjected.p[0] / triProjected.p[0].w;
+            if (triProjected.p[1].w>0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
+            if (triProjected.p[2].w>0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
 
-            // Scale into view
-            triProjected.p[0].x += 1.0f; triProjected.p[0].y += 1.0f;
-            triProjected.p[1].x += 1.0f; triProjected.p[1].y += 1.0f;
-            triProjected.p[2].x += 1.0f; triProjected.p[2].y += 1.0f;
+            // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
+            triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
+            triProjected = triProjected * vec3d{ 0.5f * (float)width, 0.5f * (float)height, 1, 1 };
 
-            triProjected.p[0].x *= 0.5f * (float)width;
-            triProjected.p[0].y *= 0.5f * (float)height;
-            triProjected.p[1].x *= 0.5f * (float)width;
-            triProjected.p[1].y *= 0.5f * (float)height;
-            triProjected.p[2].x *= 0.5f * (float)width;
-            triProjected.p[2].y *= 0.5f * (float)height;
-
-            triProjected.luminance = abs(triTranslated.luminance);
+            triProjected.luminance = triTranslated.luminance;
 
             trianglesToProject.push_back(triProjected);
         }
