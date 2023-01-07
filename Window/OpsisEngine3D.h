@@ -11,6 +11,11 @@ public:
     bool OnUserUpdate(float fElapsedTime) override;
 
     std::vector<triangle> trianglesToRaster;
+
+    bool bWKeyHeld = false;
+    bool bSKeyHeld = false;
+    bool bAKeyHeld = false;
+    bool bDKeyHeld = false;
     
 private:
 
@@ -19,6 +24,8 @@ private:
     float fTheta = 0;
 
     vec3d vCamera;
+
+    vec3d vLookDir;
 
     vec3d light = { 0.0f, 0.0f, -1.0f };
 

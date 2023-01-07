@@ -79,6 +79,19 @@ mat4x4 Engine3D::getProjMatrix()
 	return matProj;
 }
 
+mat4x4 Engine3D::getTranslMatrix(float x, float y, float z)
+{
+	mat4x4 matTransl;
+	matProj.m[0][0] = 1.0f;
+	matProj.m[1][1] = 1.0f;
+	matProj.m[2][2] = 1.0f;
+	matProj.m[3][3] = 1.0f;
+	matProj.m[3][0] = x;
+	matProj.m[3][1] = y;
+	matProj.m[3][2] = z;
+	return matTransl;
+}
+
 mat4x4 Engine3D::getRotMatrixZ(float fTheta)
 {
 	mat4x4 matRotZ;

@@ -21,6 +21,8 @@ void draw(HDC hdc);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    wchar_t msg[32];
+
     switch (uMsg)
     {
     case WM_PAINT:
@@ -33,6 +35,46 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         EndPaint(hWnd, &pntStruct);
         break;
     }
+
+    case WM_KEYDOWN:
+        swprintf_s(msg, L"WM_KEYDOWN: 0x%c\n", wParam);
+        OutputDebugString(msg);
+        if ((char)wParam == 'W') {
+            opsisEng3D->bWKeyHeld = true;
+        }
+        else if ((char)wParam == 'S')
+        {
+            opsisEng3D->bSKeyHeld = true;
+        }
+        else if ((char)wParam == 'A')
+        {
+            opsisEng3D->bAKeyHeld = true;
+        }
+        else if ((char)wParam == 'D')
+        {
+            opsisEng3D->bDKeyHeld = true;
+        }
+        break;
+
+    case WM_KEYUP:
+        swprintf_s(msg, L"WM_KEYUP: 0x%c\n", wParam);
+        OutputDebugString(msg);
+        if ((char)wParam == 'W') {
+            opsisEng3D->bWKeyHeld = false;
+        }
+        else if ((char)wParam == 'S')
+        {
+            opsisEng3D->bSKeyHeld = false;
+        }
+        else if ((char)wParam == 'A')
+        {
+            opsisEng3D->bAKeyHeld = false;
+        }
+        else if ((char)wParam == 'D')
+        {
+            opsisEng3D->bDKeyHeld = false;
+        }
+        break;
 
     case WM_SIZE:
     {
@@ -183,7 +225,7 @@ void draw(HDC hdc) {
             opsisEng3D->bLockRaster = false;
         //}
 
-            swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);
+            swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f / WKeyHeld: %d", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime, opsisEng3D->bWKeyHeld);
     }
 
     Gdiplus::FontFamily fontFamily(L"Arial");

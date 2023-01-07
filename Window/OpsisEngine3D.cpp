@@ -33,34 +33,62 @@ bool OpsisEngine3D::OnUserCreate()
     //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
     //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
     //};
-    loadObj("assets/teapot.obj", meshCube);
+    loadObj("assets/axis.obj", meshCube);
 
     return true;
 }
 bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 {
-    if (bLockRaster) return true;
+    //if (bLockRaster) return true;
 
     fTheta += 1.0f * fElapsedTime;
+
+    if (bWKeyHeld)
+    {
+        vCamera.z += 8.0f * fElapsedTime;
+    }
+    if (bSKeyHeld)
+    {
+        vCamera.z -= 8.0f * fElapsedTime;
+    }
+    if (bAKeyHeld)
+    {
+        vCamera.x -= 8.0f * fElapsedTime;
+    }
+    if (bDKeyHeld)
+    {
+        vCamera.x += 8.0f * fElapsedTime;
+    }
+
+    mat4x4 matRotZ = getRotMatrixZ(fTheta);
+    mat4x4 matRotX = getRotMatrixX(fTheta);
+
+    vLookDir = { 0, 0, 1 };
+    vec3d vUp = { 0, 1, 0 };
+    vec3d vTarget = vCamera + vLookDir;
+
+    mat4x4 matCamera = vCamera.pointAt(vTarget, vUp);
+
+    light = vTarget;
+
+    mat4x4 matView = matCamera.invertRotationOrTranslationMatrix();
 
     std::vector<triangle> trianglesToProject;
 
     // Project triangles into camera view
     for (auto &tri : meshCube.tris)
     {
-        triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
+        triangle triRotatedZ, triRotatedZX, triTranslated, triViewed, triProjected;
 
         // Rotate in Z
-        mat4x4 matRotZ = getRotMatrixZ(fTheta);
         triRotatedZ = tri * matRotZ;
 
         // Rotate in X
-        mat4x4 matRotX = getRotMatrixX(fTheta);
         triRotatedZX = triRotatedZ * matRotX;
 
         // Translate further along Z
         triTranslated = triRotatedZX;
-        triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 10.0f };
+        triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 40.0f };
 
         vec3d normal, line1, line2;
         line1 = triTranslated.p[1] - triTranslated.p[0];
@@ -82,11 +110,13 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             triTranslated.luminance = abs(normal.getDotProduct(lightLine));
 
+            // Convert to view space
+            triViewed = triTranslated * matView;
+            
+            triViewed.luminance = triTranslated.luminance;
+
             // Project triangles from 3D -> 2D
-            triTranslated.p[0].w = 1;
-            triTranslated.p[1].w = 1;
-            triTranslated.p[2].w = 1;
-            triProjected = triTranslated * matProj;
+            triProjected = triViewed * matProj;
             if (triProjected.p[0].w>0) triProjected.p[0] = triProjected.p[0] / triProjected.p[0].w;
             if (triProjected.p[1].w>0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
             if (triProjected.p[2].w>0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
@@ -95,7 +125,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
             triProjected = triProjected * vec3d{ 0.5f * (float)width, 0.5f * (float)height, 1, 1 };
 
-            triProjected.luminance = triTranslated.luminance;
+            triProjected.luminance = triViewed.luminance;
 
             trianglesToProject.push_back(triProjected);
         }
