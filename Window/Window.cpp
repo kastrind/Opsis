@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <Windowsx.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tchar.h> // Or: remove this
@@ -14,6 +15,11 @@ OpsisEngine3D* opsisEng3D;
 
 static float fElapsedTime;
 
+static int nMouseLastX = 0;
+static int nMouseLastY = 0;
+static int nMouseX = 0;
+static int nMouseY = 0;
+
 static TCHAR WindowClass[] = TEXT("Window");
 // or: static WCHAR WindowClass[] = L"Window";
 
@@ -22,6 +28,8 @@ void draw(HDC hdc);
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     wchar_t msg[32];
+    nMouseLastX = nMouseX;
+    nMouseLastY = nMouseY;
 
     switch (uMsg)
     {
@@ -37,8 +45,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     case WM_KEYDOWN:
-        swprintf_s(msg, L"WM_KEYDOWN: 0x%c\n", wParam);
-        OutputDebugString(msg);
+        //swprintf_s(msg, L"WM_KEYDOWN: 0x%c\n", wParam);
+        //OutputDebugString(msg);
         if ((char)wParam == 'W') {
             opsisEng3D->bWKeyHeld = true;
         }
@@ -57,8 +65,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_KEYUP:
-        swprintf_s(msg, L"WM_KEYUP: 0x%c\n", wParam);
-        OutputDebugString(msg);
+        //swprintf_s(msg, L"WM_KEYUP: 0x%c\n", wParam);
+        //OutputDebugString(msg);
         if ((char)wParam == 'W') {
             opsisEng3D->bWKeyHeld = false;
         }
@@ -73,6 +81,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         else if ((char)wParam == 'D')
         {
             opsisEng3D->bDKeyHeld = false;
+        }
+        break;
+
+    case WM_MOUSEMOVE:
+        nMouseX = GET_X_LPARAM(lParam);
+        nMouseY = GET_Y_LPARAM(lParam);
+
+        if (nMouseX > nMouseLastX)
+        {
+            opsisEng3D->bMouseRight = true;
+        }
+        else if (nMouseX < nMouseLastX)
+        {
+            opsisEng3D->bMouseLeft = true;
+        }
+        if (nMouseY > nMouseLastY)
+        {
+            opsisEng3D->bMouseDown = true;
+        }
+        else if (nMouseY < nMouseLastY)
+        {
+            opsisEng3D->bMouseUp = true;
         }
         break;
 
@@ -117,6 +147,19 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         break;
     }
+    }
+    if (opsisEng3D)
+    {
+        if (nMouseX == nMouseLastX)
+        {
+            opsisEng3D->bMouseRight = false;
+            opsisEng3D->bMouseLeft = false;
+        }
+        if (nMouseY == nMouseLastY)
+        {
+            opsisEng3D->bMouseUp = false;
+            opsisEng3D->bMouseDown = false;
+        }
     }
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -167,6 +210,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
+    // Get the window client area.
+    RECT rc;
+    GetClientRect(hCreateWin, &rc);
+
+    // Convert the client area to screen coordinates.
+    POINT pt = { rc.left, rc.top };
+    POINT pt2 = { rc.right, rc.bottom };
+    ClientToScreen(hCreateWin, &pt);
+    ClientToScreen(hCreateWin, &pt2);
+    SetRect(&rc, pt.x, pt.y, pt2.x, pt2.y);
+
+    // Confine the cursor.
+    ClipCursor(&rc);
+
     ShowWindow(hCreateWin, nCmdShow);
     UpdateWindow(hCreateWin);
 
@@ -186,7 +243,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         fElapsedTime = elapsedTime.count();
 
         TranslateMessage(&message);
-        DispatchMessage(&message); 
+        DispatchMessage(&message);
+
     };
     
     t.join();
@@ -210,7 +268,7 @@ void draw(HDC hdc) {
     if (opsisEng3D != nullptr) {
         //for (int i = 0; i < 1000; i++) {
             opsisEng3D->bLockRaster = true;
-            for (auto tri : opsisEng3D->trianglesToRaster)
+            for (auto &tri : opsisEng3D->trianglesToRaster)
             {
                 Gdiplus::PointF point1(tri.p[0].x, tri.p[0].y);
                 Gdiplus::PointF point2(tri.p[1].x, tri.p[1].y);
@@ -225,7 +283,7 @@ void draw(HDC hdc) {
             opsisEng3D->bLockRaster = false;
         //}
 
-            swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f / WKeyHeld: %d", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime, opsisEng3D->bWKeyHeld);
+            swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f %d", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime, nMouseX);
     }
 
     Gdiplus::FontFamily fontFamily(L"Arial");

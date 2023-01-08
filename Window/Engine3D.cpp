@@ -92,18 +92,6 @@ mat4x4 Engine3D::getTranslMatrix(float x, float y, float z)
 	return matTransl;
 }
 
-mat4x4 Engine3D::getRotMatrixZ(float fTheta)
-{
-	mat4x4 matRotZ;
-	matRotZ.m[0][0] = cosf(fTheta);
-	matRotZ.m[0][1] = sinf(fTheta);
-	matRotZ.m[1][0] = -sinf(fTheta);
-	matRotZ.m[1][1] = cosf(fTheta);
-	matRotZ.m[2][2] = 1;
-	matRotZ.m[3][3] = 1;
-	return matRotZ;
-}
-
 mat4x4 Engine3D::getRotMatrixX(float fTheta)
 {
 	mat4x4 matRotX;
@@ -114,6 +102,30 @@ mat4x4 Engine3D::getRotMatrixX(float fTheta)
 	matRotX.m[2][2] = cosf(fTheta * 0.5f);;
 	matRotX.m[3][3] = 1;
 	return matRotX;
+}
+
+mat4x4 Engine3D::getRotMatrixY(float fTheta)
+{
+	mat4x4 matRotY;
+	matRotY.m[0][0] = cosf(fTheta);
+	matRotY.m[0][2] = sinf(fTheta);
+	matRotY.m[2][0] = -sinf(fTheta);
+	matRotY.m[1][1] = 1.0f;
+	matRotY.m[2][2] = cosf(fTheta);
+	matRotY.m[3][3] = 1.0f;
+	return matRotY;
+}
+
+mat4x4 Engine3D::getRotMatrixZ(float fTheta)
+{
+	mat4x4 matRotZ;
+	matRotZ.m[0][0] = cosf(fTheta);
+	matRotZ.m[0][1] = sinf(fTheta);
+	matRotZ.m[1][0] = -sinf(fTheta);
+	matRotZ.m[1][1] = cosf(fTheta);
+	matRotZ.m[2][2] = 1;
+	matRotZ.m[3][3] = 1;
+	return matRotZ;
 }
 
 bool Engine3D::loadObj(std::string sFilename, mesh& outMesh) {

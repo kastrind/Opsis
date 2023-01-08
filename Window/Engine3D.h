@@ -214,9 +214,11 @@ class Engine3D
 
 		mat4x4 getTranslMatrix(float x, float y, float z);
 
-		mat4x4 getRotMatrixZ(float fTheta);
-
 		mat4x4 getRotMatrixX(float fTheta);
+
+		mat4x4 getRotMatrixY(float fTheta);
+
+		mat4x4 getRotMatrixZ(float fTheta);
 
 		std::atomic<bool> bAtomActive;
 

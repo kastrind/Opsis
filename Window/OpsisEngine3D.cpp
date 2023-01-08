@@ -8,68 +8,85 @@ OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
 }
 bool OpsisEngine3D::OnUserCreate()
 {
-    //meshCube.tris = {
-    //    // SOUTH
-    //    {0.0f, 0.0f, 0.0f,      0.0f, 1.0f, 0.0f,       1.0f, 1.0f, 0.0f},
-    //    {0.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 0.0f, 0.0f},
-
-    //    //// EAST
-    //    {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 0.0f,       1.0f, 1.0f, 1.0f},
-    //    {1.0f, 0.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 1.0f},
-
-    //    //// NORTH
-    //    {1.0f, 0.0f, 1.0f,      1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 1.0f},
-    //    {1.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f},
-
-    //    //// WEST
-    //    {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 1.0f,       0.0f, 1.0f, 0.0f},
-    //    {0.0f, 0.0f, 1.0f,      0.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f},
-
-    //    //// TOP
-    //    {0.0f, 1.0f, 0.0f,      0.0f, 1.0f, 1.0f,       1.0f, 1.0f, 1.0f},
-    //    {0.0f, 1.0f, 0.0f,      1.0f, 1.0f, 1.0f,       1.0f, 1.0f, 0.0f},
-
-    //    //// BOTTOM
-    //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 0.0f},
-    //    {1.0f, 0.0f, 1.0f,      0.0f, 0.0f, 0.0f,       1.0f, 0.0f, 0.0f},
-    //};
-    loadObj("assets/axis.obj", meshCube);
+    loadObj("assets/teapot.obj", meshCube);
 
     return true;
 }
 bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 {
-    //if (bLockRaster) return true;
+    //fTheta += 1.0f * fElapsedTime;
 
-    fTheta += 1.0f * fElapsedTime;
-
-    if (bWKeyHeld)
-    {
-        vCamera.z += 8.0f * fElapsedTime;
-    }
-    if (bSKeyHeld)
-    {
-        vCamera.z -= 8.0f * fElapsedTime;
-    }
     if (bAKeyHeld)
     {
-        vCamera.x -= 8.0f * fElapsedTime;
+        vRight = vForward * matCameraRotY90CCW;
+        vCamera = vCamera + vRight;
     }
     if (bDKeyHeld)
     {
-        vCamera.x += 8.0f * fElapsedTime;
+        vLeft = vForward * matCameraRotY90CW;
+        vCamera = vCamera + vLeft;
+    }
+
+    if (bWKeyHeld)
+    {
+        vCamera = vCamera + vForward;
+    }
+    if (bSKeyHeld)
+    {
+        vCamera = vCamera - vForward;
+    }
+
+    if (bMouseLeft)
+    {
+        fYaw += 2.0f * fElapsedTime;
+    }
+    if (bMouseRight)
+    {
+        fYaw -= 2.0f * fElapsedTime;
+    }
+
+    if (bMouseUp)
+    {
+        if (vForward.z < 0)
+        {
+            fPitch += 2.0f * fElapsedTime;
+            fPitch = min(fPitch, 1.57f);
+        }
+        else
+        {
+            fPitch -= 2.0f * fElapsedTime;
+            fPitch = max(fPitch, -1.57f);
+        }
+    }
+    if (bMouseDown)
+    {
+        if (vForward.z < 0)
+        {
+            fPitch -= 2.0f * fElapsedTime;
+            fPitch = max(fPitch, -1.57f);
+        }
+        else
+        {
+            fPitch += 2.0f * fElapsedTime;
+            fPitch = min(fPitch, 1.57f);
+        }
     }
 
     mat4x4 matRotZ = getRotMatrixZ(fTheta);
     mat4x4 matRotX = getRotMatrixX(fTheta);
 
-    vLookDir = { 0, 0, 1 };
-    vec3d vUp = { 0, 1, 0 };
-    vec3d vTarget = vCamera + vLookDir;
 
+    // Create "point at" matrix for camera
+    vUp = { 0, 1, 0 };
+    vTarget = { 0, 0, 1 };
+    vForward = vLookDir * 8.0f * fElapsedTime;
+    mat4x4 matCameraRotY = getRotMatrixY(fYaw);
+    mat4x4 matCameraRotX = getRotMatrixX(fPitch);
+    vLookDir = (vTarget * matCameraRotY) * matCameraRotX;
+    vTarget = vCamera + vLookDir;
     mat4x4 matCamera = vCamera.pointAt(vTarget, vUp);
 
-    light = vTarget;
+    light = { 0.0f, 0.0f, -1.0f };
 
     mat4x4 matView = matCamera.invertRotationOrTranslationMatrix();
 
@@ -90,9 +107,12 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
         triTranslated = triRotatedZX;
         triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 40.0f };
 
+        // Convert to view space
+        triViewed = triTranslated * matView;
+
         vec3d normal, line1, line2;
-        line1 = triTranslated.p[1] - triTranslated.p[0];
-        line2 = triTranslated.p[2] - triTranslated.p[0];
+        line1 = triViewed.p[1] - triViewed.p[0];
+        line2 = triViewed.p[2] - triViewed.p[0];
 
         normal = line1.getNormal(line2);
         normal.normalize();
@@ -105,15 +125,12 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
         {
             // Illumination
             vec3d lightLine;
-            lightLine = triTranslated.p[0] - light;
+            lightLine = triViewed.p[0] - light;
             lightLine.normalize();
 
-            triTranslated.luminance = abs(normal.getDotProduct(lightLine));
-
-            // Convert to view space
-            triViewed = triTranslated * matView;
+            triViewed.luminance = max(0.2f, abs(normal.getDotProduct(lightLine)));
             
-            triViewed.luminance = triTranslated.luminance;
+            //triViewed.luminance = triTranslated.luminance;
 
             // Project triangles from 3D -> 2D
             triProjected = triViewed * matProj;
@@ -124,6 +141,8 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
             triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
             triProjected = triProjected * vec3d{ 0.5f * (float)width, 0.5f * (float)height, 1, 1 };
+            triProjected = triProjected * vec3d{ 1, -1, 1, 1 };
+            triProjected = triProjected + vec3d{ 0, (float)height, 0, 0};
 
             triProjected.luminance = triViewed.luminance;
 

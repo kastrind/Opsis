@@ -16,7 +16,12 @@ public:
     bool bSKeyHeld = false;
     bool bAKeyHeld = false;
     bool bDKeyHeld = false;
-    
+    bool bMouseRight = false;
+    bool bMouseLeft = false;
+    bool bMouseUp = false;
+    bool bMouseDown = false;
+
+    vec3d light = { 0.0f, 0.0f, -1.0f };
 private:
 
     mesh meshCube;
@@ -24,9 +29,19 @@ private:
     float fTheta = 0;
 
     vec3d vCamera;
-
+    vec3d vForward;
+    vec3d vUp;
     vec3d vLookDir;
+    vec3d vTarget;
 
-    vec3d light = { 0.0f, 0.0f, -1.0f };
+    mat4x4 matCameraRotY90CW = getRotMatrixY(-1.57075f);
+    mat4x4 matCameraRotY90CCW = getRotMatrixY(1.57075f);
+    vec3d vRight;
+    vec3d vLeft;
+
+    float fYaw = 0;
+    float fPitch = 0;
+
+
 
 };
