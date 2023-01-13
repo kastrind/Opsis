@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <list>
 #include <thread>
 #include <atomic>
 #include <chrono>
@@ -148,42 +149,164 @@ struct vec3d
 		matrix.m[3][0] = pos.x;			matrix.m[3][1] = pos.y;			matrix.m[3][2] = pos.z;			matrix.m[3][3] = 1.0f;
 		return matrix;
 	}
+
+	inline vec3d intersectPlane(vec3d& planeNormal, vec3d& lineStart, vec3d& lineEnd)
+	{
+		planeNormal.normalize();
+		float planeNormalPointDP = planeNormal.getDotProduct(*this);
+		float lineStartNormalDP = lineStart.getDotProduct(planeNormal);
+		float lineEndNormalDP = lineEnd.getDotProduct(planeNormal);
+		float t = (-planeNormalPointDP - lineStartNormalDP) / (lineEndNormalDP - lineStartNormalDP);
+		vec3d lineStartToEnd = lineEnd - lineStart;
+		vec3d lineToIntersect = lineStartToEnd * t;
+		return lineStart + lineToIntersect;
+	}
 };
 
 struct triangle
 {
 	vec3d p[3] = { 0, 0, 0 };
 
+	unsigned char R = 0; unsigned char G = 0; unsigned char B = 0;
+
 	float luminance = 0.0f;
 
 	inline triangle operator+(const vec3d& in) {
 		triangle out;
+		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
 		out.p[0] = p[0] + in; out.p[1] = p[1] + in; out.p[2] = p[2] + in;
 		return out;
 	}
 
 	inline triangle operator-(const vec3d& in) {
 		triangle out;
+		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
 		out.p[0] = p[0] - in; out.p[1] = p[1] - in; out.p[2] = p[2] - in;
 		return out;
 	}
 
 	inline triangle operator*(const vec3d& in) {
 		triangle out;
+		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
 		out.p[0] = p[0] * in; out.p[1] = p[1] * in; out.p[2] = p[2] * in;
 		return out;
 	}
 
 	inline triangle operator*(const mat4x4& in) {
 		triangle out;
+		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
 		out.p[0] = p[0] * in; out.p[1] = p[1] * in; out.p[2] = p[2] * in;
 		return out;
 	}
 
 	inline triangle operator/(const vec3d& in) {
 		triangle out;
+		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
 		out.p[0] = p[0] / in; out.p[1] = p[1] / in; out.p[2] = p[2] / in;
 		return out;
+	}
+
+	inline int clipAgainstPlane(vec3d planePoint, vec3d planeNormal, triangle& outTriangle1, triangle& outTriangle2)
+	{
+		// Make sure plane normal is indeed normal
+		planeNormal.normalize();
+
+		// Return signed shortest distance from point to plane, plane normal must be normalised
+		auto dist = [&](vec3d& p)
+		{
+			vec3d n = p;
+			n.normalize();
+			//return (planeNormal.x * p.x + planeNormal.y * p.y + planeNormal.z * p.z - planeNormal.getDotProduct(planePoint));
+			return (planeNormal.getDotProduct(n) - planeNormal.getDotProduct(planePoint));
+		};
+
+		// Create two temporary storage arrays to classify points either side of plane
+		// If distance sign is positive, point lies on "inside" of plane
+		vec3d* inside_points[3];  int nInsidePointCount = 0;
+		vec3d* outside_points[3]; int nOutsidePointCount = 0;
+
+		// Get signed distance of each point in triangle to plane
+		float d0 = dist(p[0]);
+		float d1 = dist(p[1]);
+		float d2 = dist(p[2]);
+
+		if (d0 >= 0) { inside_points[nInsidePointCount++] = &p[0]; }
+		else { outside_points[nOutsidePointCount++] = &p[0]; }
+		if (d1 >= 0) { inside_points[nInsidePointCount++] = &p[1]; }
+		else { outside_points[nOutsidePointCount++] = &p[1]; }
+		if (d2 >= 0) { inside_points[nInsidePointCount++] = &p[2]; }
+		else { outside_points[nOutsidePointCount++] = &p[2]; }
+
+		// Now classify triangle points, and break the input triangle into 
+		// smaller output triangles if required. There are four possible
+		// outcomes...
+		if (nInsidePointCount == 0)
+		{
+			// All points lie on the outside of plane, so clip whole triangle
+			// It ceases to exist
+			return 0; // No returned triangles are valid
+		}
+
+		if (nInsidePointCount == 3)
+		{
+			// All points lie on the inside of plane, so do nothing
+			// and allow the triangle to simply pass through
+			outTriangle1 = *this;
+			return 1; // Just the one returned original triangle is valid
+		}
+
+		if (nInsidePointCount == 1 && nOutsidePointCount == 2)
+		{
+			// Triangle should be clipped. As two points lie outside
+			// the plane, the triangle simply becomes a smaller triangle
+
+			// Copy appearance info to new triangle
+			outTriangle1.luminance = luminance;
+			outTriangle1.R = 255; outTriangle1.G = 1; outTriangle1.B = 1;
+
+			// The inside point is valid, so keep that...
+			outTriangle1.p[0] = *inside_points[0];
+
+			// but the two new points are at the locations where the 
+			// original sides of the triangle (lines) intersect with the plane
+			outTriangle1.p[1] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[0]);
+			outTriangle1.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[1]);
+
+			return 1; // Return the newly formed single triangle
+		}
+
+		if (nInsidePointCount == 2 && nOutsidePointCount == 1)
+		{
+			// Triangle should be clipped. As two points lie inside the plane,
+			// the clipped triangle becomes a "quad". Fortunately, we can
+			// represent a quad with two new triangles
+
+			// Copy appearance info to new triangles
+			outTriangle1.luminance = this->luminance;
+			outTriangle2.luminance = this->luminance;
+
+			outTriangle1.R = 1; outTriangle1.G = 255; outTriangle1.B = 1;
+			outTriangle2.R = 1; outTriangle2.G = 1; outTriangle2.B = 255;
+
+			// The first triangle consists of the two inside points and a new
+			// point determined by the location where one side of the triangle
+			// intersects with the plane
+			outTriangle1.p[0] = *inside_points[0];
+			outTriangle1.p[1] = *inside_points[1];
+			outTriangle1.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[0]);
+
+			// The second triangle is composed of one of the inside points, a
+			// new point determined by the intersection of the other side of the 
+			// triangle and the plane, and the newly created point above
+			outTriangle2.p[0] = *inside_points[1];
+			outTriangle2.p[1] = outTriangle1.p[2];
+			outTriangle2.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[1], *outside_points[0]);
+
+			return 2; // Return two newly formed triangles which form a quad
+		}
+
+
+		return -1;
 	}
 
 };
@@ -197,7 +320,7 @@ class Engine3D
 {
 	public:
 
-		Engine3D(HWND hWnd, int width=320, int height=240, float fNear=0.1f, float fFar = 1000.0f, float fFov = 90.0f);
+		Engine3D(HWND hWnd, int width=320, int height=240, float fNear = 0.1f, float fFar = 1000.0f, float fFov = 90.0f);
 
 		std::thread Start();
 

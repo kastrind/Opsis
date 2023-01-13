@@ -264,6 +264,7 @@ void draw(HDC hdc) {
     gf2->FillRectangle(&brushBlack, 0, 0, SCREENWIDTH, SCREENHEIGHT);
 
     wchar_t s[256];
+    unsigned char r = 0; unsigned char g = 0; unsigned char b = 0;
 
     if (opsisEng3D != nullptr) {
         //for (int i = 0; i < 1000; i++) {
@@ -275,15 +276,19 @@ void draw(HDC hdc) {
                 Gdiplus::PointF point3(tri.p[2].x, tri.p[2].y);
                 Gdiplus::PointF points[4] = { point1, point2, point3, point1 };
 
-                Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, 255 * tri.luminance, 255 * tri.luminance, 255 * tri.luminance));
+                r = tri.R > 0 ? tri.R : 255;
+                g = tri.G > 0 ? tri.G : 255;
+                b = tri.B > 0 ? tri.B : 255;
 
-                //gf2->DrawLines(&pen, points, 4);
+                Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, r * tri.luminance, g * tri.luminance, b * tri.luminance));
+
+                gf2->DrawLines(&pen, points, 4);
                 gf2->FillPolygon(&brushShaded, points, 4);
             }
             opsisEng3D->bLockRaster = false;
         //}
 
-            swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f %d", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime, nMouseX);
+            swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);
     }
 
     Gdiplus::FontFamily fontFamily(L"Arial");

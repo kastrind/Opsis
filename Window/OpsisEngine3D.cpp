@@ -8,7 +8,7 @@ OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
 }
 bool OpsisEngine3D::OnUserCreate()
 {
-    loadObj("assets/teapot.obj", meshCube);
+    loadObj("assets/axis.obj", meshCube);
 
     return true;
 }
@@ -130,25 +130,37 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             triViewed.luminance = max(0.2f, abs(normal.getDotProduct(lightLine)));
             
-            //triViewed.luminance = triTranslated.luminance;
+            // Clip Viewed Triangle against near plane, this could form two additional triangles. 
+            int nClippedTriangles = 0;
+            triangle clipped[2];
+            vec3d nearPlane = { 0.0f, 0.0f, 0.1f };
+            vec3d nearPlaneNormal = { 0.0f, 0.0f, 1.0f };
+            nClippedTriangles = triViewed.clipAgainstPlane(nearPlane, nearPlaneNormal, clipped[0], clipped[1]);
 
-            // Project triangles from 3D -> 2D
-            triProjected = triViewed * matProj;
-            if (triProjected.p[0].w>0) triProjected.p[0] = triProjected.p[0] / triProjected.p[0].w;
-            if (triProjected.p[1].w>0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
-            if (triProjected.p[2].w>0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
+            // We may end up with multiple triangles form the clip, so project as required
+            for (int n = 0; n < nClippedTriangles; n++)
+            {
+                // Project triangles from 3D -> 2D
+                triProjected = clipped[n] * matProj;
+                if (triProjected.p[0].w > 0) triProjected.p[0] = triProjected.p[0] / triProjected.p[0].w;
+                if (triProjected.p[1].w > 0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
+                if (triProjected.p[2].w > 0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
 
-            // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
-            triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
-            triProjected = triProjected * vec3d{ 0.5f * (float)width, 0.5f * (float)height, 1, 1 };
-            triProjected = triProjected * vec3d{ 1, -1, 1, 1 };
-            triProjected = triProjected + vec3d{ 0, (float)height, 0, 0};
+                triProjected.luminance = clipped[n].luminance;
 
-            triProjected.luminance = triViewed.luminance;
+                //wchar_t s[256];
+                //swprintf_s(s, 256, L"%3.2f", triProjected.luminance);
+                //OutputDebugString(s);
 
-            trianglesToProject.push_back(triProjected);
+                // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
+                triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
+                triProjected = triProjected * vec3d{ 0.5f * (float)width, 0.5f * (float)height, 1, 1 };
+                triProjected = triProjected * vec3d{ 1, -1, 1, 1 };
+                triProjected = triProjected + vec3d{ 0, (float)height, 0, 0 };
+
+                trianglesToProject.push_back(triProjected);
+            }
         }
-
     }
 
     //Sort triangles from back to front
@@ -159,9 +171,74 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             return z1 > z2;
         });
 
+
+    int nNewTriangles = 1;
+    triangle clipped[2];
+    std::list<triangle> listTriangles;
+    vec3d planeTop = { 1.0f, 0.0f, 0.0f };
+    vec3d planeTopNormal = { 0.0f, 1.0f, 0.0f };
+
+    vec3d planeBottom = { 0.0f, (float)height-1, 0.0f};
+    vec3d planeBottomNormal = { 0.0f, -1.0f, 0.0f };
+
+    vec3d planeLeft = { 0.0f, 1.0f, 0.0f };
+    vec3d planeLeftNormal = { 1.0f, 0.0f, 0.0f };
+
+    vec3d planeRight = { (float)width-1, 0.0f, 0.0f };
+    vec3d planeRightNormal = { -1.0f, 0.0f, 0.0f };
+    
+    for (auto& tri : trianglesToProject)
+    {
+        // Clip triangles against all four screen edges, this could yield
+        // a bunch of triangles, so create a queue that we traverse to 
+        //  ensure we only test new triangles generated against planes
+        nNewTriangles = 1;
+
+        // Add initial triangle
+        listTriangles.push_back(tri);
+
+        for (int p = 0; p < 4; p++)
+        {
+            int nTrisToAdd = 0;
+            while (nNewTriangles > 0)
+            {
+                // Take triangle from front of queue
+                triangle test = listTriangles.front();
+                listTriangles.pop_front();
+                nNewTriangles--;
+
+                // Clip it against a plane. We only need to test each 
+                // subsequent plane, against subsequent new triangles
+                // as all triangles after a plane clip are guaranteed
+                // to lie on the inside of the plane. I like how this
+                // comment is almost completely and utterly justified
+                switch (p)
+                {
+                case 0:	nTrisToAdd = test.clipAgainstPlane(planeTop, planeTopNormal, clipped[0], clipped[1]); break;
+                //case 0: nTrisToAdd = 1; clipped[0] = test; break;
+                case 1:	nTrisToAdd = test.clipAgainstPlane(planeBottom, planeBottomNormal, clipped[0], clipped[1]); break;
+                //case 1: nTrisToAdd = 1; clipped[0] = test; break;
+                case 2:	nTrisToAdd = test.clipAgainstPlane(planeLeft, planeLeftNormal, clipped[0], clipped[1]); break;
+                //case 2: nTrisToAdd = 1; clipped[0] = test; break;
+                case 3:	nTrisToAdd = test.clipAgainstPlane(planeRight, planeRightNormal, clipped[0], clipped[1]); break;
+                //case 3: nTrisToAdd = 1; clipped[0] = test; break;
+                }
+
+                // Clipping may yield a variable number of triangles, so
+                // add these new ones to the back of the queue for subsequent
+                // clipping against next planes
+                for (int w = 0; w < nTrisToAdd; w++)
+                    listTriangles.push_back(clipped[w]);
+            }
+            nNewTriangles = listTriangles.size();
+        }
+    }
+
     if (!bLockRaster)
     {
-        trianglesToRaster = trianglesToProject;
+        trianglesToRaster = listTriangles;
+        //trianglesToRaster = trianglesToProject;
+
     }
 
     return true;

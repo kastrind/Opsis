@@ -10,7 +10,8 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override;
 
-    std::vector<triangle> trianglesToRaster;
+    std::list<triangle> trianglesToRaster;
+    //std::vector<triangle> trianglesToRaster;
 
     bool bWKeyHeld = false;
     bool bSKeyHeld = false;
@@ -22,6 +23,7 @@ public:
     bool bMouseDown = false;
 
     vec3d light = { 0.0f, 0.0f, -1.0f };
+
 private:
 
     mesh meshCube;
