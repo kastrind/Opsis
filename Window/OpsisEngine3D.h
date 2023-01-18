@@ -10,8 +10,7 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override;
 
-    std::list<triangle> trianglesToRaster;
-    //std::vector<triangle> trianglesToRaster;
+    std::vector<triangle> trianglesToRaster;
 
     bool bWKeyHeld = false;
     bool bSKeyHeld = false;

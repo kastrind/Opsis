@@ -153,7 +153,7 @@ struct vec3d
 	inline vec3d intersectPlane(vec3d& planeNormal, vec3d& lineStart, vec3d& lineEnd)
 	{
 		planeNormal.normalize();
-		float planeNormalPointDP = planeNormal.getDotProduct(*this);
+		float planeNormalPointDP = -planeNormal.getDotProduct(*this);
 		float lineStartNormalDP = lineStart.getDotProduct(planeNormal);
 		float lineEndNormalDP = lineEnd.getDotProduct(planeNormal);
 		float t = (-planeNormalPointDP - lineStartNormalDP) / (lineEndNormalDP - lineStartNormalDP);
@@ -167,7 +167,7 @@ struct triangle
 {
 	vec3d p[3] = { 0, 0, 0 };
 
-	unsigned char R = 0; unsigned char G = 0; unsigned char B = 0;
+	unsigned char R = 255; unsigned char G = 255; unsigned char B = 255;
 
 	float luminance = 0.0f;
 
@@ -214,10 +214,7 @@ struct triangle
 		// Return signed shortest distance from point to plane, plane normal must be normalised
 		auto dist = [&](vec3d& p)
 		{
-			vec3d n = p;
-			n.normalize();
-			//return (planeNormal.x * p.x + planeNormal.y * p.y + planeNormal.z * p.z - planeNormal.getDotProduct(planePoint));
-			return (planeNormal.getDotProduct(n) - planeNormal.getDotProduct(planePoint));
+			return (planeNormal.getDotProduct(p) - planeNormal.getDotProduct(planePoint));
 		};
 
 		// Create two temporary storage arrays to classify points either side of plane
@@ -229,6 +226,10 @@ struct triangle
 		float d0 = dist(p[0]);
 		float d1 = dist(p[1]);
 		float d2 = dist(p[2]);
+
+		//wchar_t s[256];
+		//swprintf_s(s, 256, L"   d0= %3.2f d1= %3.2f d2= %3.2f", d0, d1, d2);
+		//OutputDebugString(s);
 
 		if (d0 >= 0) { inside_points[nInsidePointCount++] = &p[0]; }
 		else { outside_points[nOutsidePointCount++] = &p[0]; }

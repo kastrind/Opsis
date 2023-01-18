@@ -7,8 +7,8 @@
 #include <gdiplus.h>
 #include "OpsisEngine3D.h"
 
-#define SCREENWIDTH  800
-#define SCREENHEIGHT 800
+#define SCREENWIDTH  600
+#define SCREENHEIGHT 600
 #define WINDOWNAME "Opsis"
 
 OpsisEngine3D* opsisEng3D;
@@ -276,9 +276,7 @@ void draw(HDC hdc) {
                 Gdiplus::PointF point3(tri.p[2].x, tri.p[2].y);
                 Gdiplus::PointF points[4] = { point1, point2, point3, point1 };
 
-                r = tri.R > 0 ? tri.R : 255;
-                g = tri.G > 0 ? tri.G : 255;
-                b = tri.B > 0 ? tri.B : 255;
+                r = tri.R; g = tri.G; b = tri.B;
 
                 Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, r * tri.luminance, g * tri.luminance, b * tri.luminance));
 
