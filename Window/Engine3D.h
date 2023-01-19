@@ -180,6 +180,7 @@ struct triangle
 	inline triangle operator+(const vec3d& in) {
 		triangle out;
 		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
+		out.t[0] = t[0]; out.t[1] = t[1]; out.t[2] = t[2];
 		out.p[0] = p[0] + in; out.p[1] = p[1] + in; out.p[2] = p[2] + in;
 		return out;
 	}
@@ -187,6 +188,7 @@ struct triangle
 	inline triangle operator-(const vec3d& in) {
 		triangle out;
 		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
+		out.t[0] = t[0]; out.t[1] = t[1]; out.t[2] = t[2];
 		out.p[0] = p[0] - in; out.p[1] = p[1] - in; out.p[2] = p[2] - in;
 		return out;
 	}
@@ -194,6 +196,7 @@ struct triangle
 	inline triangle operator*(const vec3d& in) {
 		triangle out;
 		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
+		out.t[0] = t[0]; out.t[1] = t[1]; out.t[2] = t[2];
 		out.p[0] = p[0] * in; out.p[1] = p[1] * in; out.p[2] = p[2] * in;
 		return out;
 	}
@@ -201,6 +204,7 @@ struct triangle
 	inline triangle operator*(const mat4x4& in) {
 		triangle out;
 		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
+		out.t[0] = t[0]; out.t[1] = t[1]; out.t[2] = t[2];
 		out.p[0] = p[0] * in; out.p[1] = p[1] * in; out.p[2] = p[2] * in;
 		return out;
 	}
@@ -208,6 +212,7 @@ struct triangle
 	inline triangle operator/(const vec3d& in) {
 		triangle out;
 		out.luminance = luminance; out.R = R; out.G = G; out.B = B;
+		out.t[0] = t[0]; out.t[1] = t[1]; out.t[2] = t[2];
 		out.p[0] = p[0] / in; out.p[1] = p[1] / in; out.p[2] = p[2] / in;
 		return out;
 	}

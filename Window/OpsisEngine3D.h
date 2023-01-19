@@ -23,6 +23,10 @@ public:
 
     vec3d light = { 0.0f, 0.0f, -1.0f };
 
+    float fYaw = 0;
+    float fPitch = 0;
+    vec3d vForward;
+
 private:
 
     mesh meshCube;
@@ -30,7 +34,7 @@ private:
     float fTheta = 0;
 
     vec3d vCamera;
-    vec3d vForward;
+
     vec3d vUp;
     vec3d vLookDir;
     vec3d vTarget;
@@ -40,8 +44,7 @@ private:
     vec3d vRight;
     vec3d vLeft;
 
-    float fYaw = 0;
-    float fPitch = 0;
+
 
 
 

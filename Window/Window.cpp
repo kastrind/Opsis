@@ -17,8 +17,8 @@ static float fElapsedTime;
 
 static int nMouseLastX = 0;
 static int nMouseLastY = 0;
-static int nMouseX = 0;
-static int nMouseY = 0;
+static int nMouseX = SCREENWIDTH / 2;
+static int nMouseY = SCREENHEIGHT / 2;
 
 static TCHAR WindowClass[] = TEXT("Window");
 // or: static WCHAR WindowClass[] = L"Window";
@@ -81,6 +81,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         else if ((char)wParam == 'D')
         {
             opsisEng3D->bDKeyHeld = false;
+        }
+        else if (wParam == VK_ESCAPE)
+        {
+            opsisEng3D->bAtomActive = false;
+            PostQuitMessage(0);
         }
         break;
 
@@ -159,7 +164,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             opsisEng3D->bMouseLeft = true;
             SetCursorPos(SCREENWIDTH/2, nMouseY);
 
-        }else if (nMouseX > SCREENWIDTH-50) {
+        }else if (nMouseX > SCREENWIDTH - 50) {
             opsisEng3D->bMouseRight = true;
             SetCursorPos(SCREENWIDTH / 2, nMouseY);
         }
@@ -240,9 +245,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Confine the cursor.
     ClipCursor(&rc);
-
+    SetCursorPos(SCREENWIDTH / 2, SCREENHEIGHT / 2);
     ShowCursor(false);
-
 
     ShowWindow(hCreateWin, nCmdShow);
     UpdateWindow(hCreateWin);

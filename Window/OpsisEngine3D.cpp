@@ -6,7 +6,35 @@ OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
 }
 bool OpsisEngine3D::OnUserCreate()
 {
-    loadObj("assets/teapot.obj", meshCube);
+    //loadObj("assets/teapot.obj", meshCube);
+
+    meshCube.tris = {
+
+        // SOUTH
+        { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
+        { 0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+
+        // EAST           																			   
+        { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
+        { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+
+        // NORTH           																			   
+        { 1.0f, 0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
+        { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+
+        // WEST            																			   
+        { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
+        { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+
+        // TOP             																			   
+        { 0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
+        { 0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+
+        // BOTTOM          																			  
+        { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
+        { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+
+    };
 
     return true;
 }
@@ -36,38 +64,22 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
     if (bMouseLeft)
     {
-        fYaw += 1.0f * fElapsedTime;
+        fYaw += 2.0f * fElapsedTime;
     }
     if (bMouseRight)
     {
-        fYaw -= 1.0f * fElapsedTime;
+        fYaw -= 2.0f * fElapsedTime;
     }
 
     if (bMouseUp)
     {
-        if (vForward.z < 0)
-        {
-            fPitch += 1.0f * fElapsedTime;
-            fPitch = min(fPitch, 1.57f);
-        }
-        else
-        {
-            fPitch -= 1.0f * fElapsedTime;
-            fPitch = max(fPitch, -1.57f);
-        }
+        fPitch -= 2.0f * fElapsedTime;
+        fPitch = max(fPitch, -3.14f);
     }
     if (bMouseDown)
     {
-        if (vForward.z < 0)
-        {
-            fPitch -= 2.0f * fElapsedTime;
-            fPitch = max(fPitch, -1.57f);
-        }
-        else
-        {
-            fPitch += 2.0f * fElapsedTime;
-            fPitch = min(fPitch, 1.57f);
-        }
+        fPitch += 2.0f * fElapsedTime;
+        fPitch = min(fPitch, 3.14f);
     }
 
     mat4x4 matRotZ = getRotMatrixZ(fTheta);
@@ -80,7 +92,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     vForward = vLookDir * 8.0f * fElapsedTime;
     mat4x4 matCameraRotY = getRotMatrixY(fYaw);
     mat4x4 matCameraRotX = getRotMatrixX(fPitch);
-    vLookDir = (vTarget * matCameraRotY) * matCameraRotX;
+    vLookDir = (vTarget * matCameraRotX) * matCameraRotY;
     vTarget = vCamera + vLookDir;
     mat4x4 matCamera = vCamera.pointAt(vTarget, vUp);
 
@@ -134,8 +146,6 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             if (triProjected.p[1].w > 0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
             if (triProjected.p[2].w > 0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
 
-            triProjected.luminance = triViewed.luminance;
-            triProjected.R = triViewed.R; triProjected.G = triViewed.G; triProjected.B = triViewed.B;
 
             // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
             triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
