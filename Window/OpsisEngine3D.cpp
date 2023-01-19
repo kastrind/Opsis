@@ -36,23 +36,23 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
     if (bMouseLeft)
     {
-        fYaw += 2.0f * fElapsedTime;
+        fYaw += 1.0f * fElapsedTime;
     }
     if (bMouseRight)
     {
-        fYaw -= 2.0f * fElapsedTime;
+        fYaw -= 1.0f * fElapsedTime;
     }
 
     if (bMouseUp)
     {
         if (vForward.z < 0)
         {
-            fPitch += 2.0f * fElapsedTime;
+            fPitch += 1.0f * fElapsedTime;
             fPitch = min(fPitch, 1.57f);
         }
         else
         {
-            fPitch -= 2.0f * fElapsedTime;
+            fPitch -= 1.0f * fElapsedTime;
             fPitch = max(fPitch, -1.57f);
         }
     }
@@ -163,7 +163,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             listTriangles.push_back(triProjected);
             int nNewTriangles = 1;
-            /*
+            
             for (int p = 0; p < 5; p++)
             {
                 int nTrisToAdd = 0;
@@ -200,7 +200,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
                         listTriangles.push_back(clipped[w]);
                 }
                 nNewTriangles = listTriangles.size();
-            }*/
+            }
 
             for (auto& triProjected : listTriangles)
             {

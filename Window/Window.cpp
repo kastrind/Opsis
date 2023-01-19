@@ -155,10 +155,27 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             opsisEng3D->bMouseRight = false;
             opsisEng3D->bMouseLeft = false;
         }
+        if (nMouseX == 0) {
+            opsisEng3D->bMouseLeft = true;
+            SetCursorPos(SCREENWIDTH/2, nMouseY);
+
+        }else if (nMouseX > SCREENWIDTH-50) {
+            opsisEng3D->bMouseRight = true;
+            SetCursorPos(SCREENWIDTH / 2, nMouseY);
+        }
         if (nMouseY == nMouseLastY)
         {
             opsisEng3D->bMouseUp = false;
             opsisEng3D->bMouseDown = false;
+        }
+        if (nMouseY == 0) {
+            opsisEng3D->bMouseUp = true;
+            SetCursorPos(nMouseX, SCREENHEIGHT / 2);
+
+        }
+        else if (nMouseY > SCREENHEIGHT - 50) {
+            opsisEng3D->bMouseDown = true;
+            SetCursorPos(nMouseX, SCREENHEIGHT/2);
         }
     }
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -223,6 +240,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Confine the cursor.
     ClipCursor(&rc);
+
+    ShowCursor(false);
+
 
     ShowWindow(hCreateWin, nCmdShow);
     UpdateWindow(hCreateWin);

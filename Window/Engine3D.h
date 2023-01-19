@@ -39,6 +39,12 @@ struct mat4x4
 
 };
 
+struct vec2d {
+	float u = 0;
+	float v = 0;
+	float w = 1;
+};
+
 struct vec3d
 {
 	float x = 0;
@@ -166,7 +172,7 @@ struct vec3d
 struct triangle
 {
 	vec3d p[3] = { 0, 0, 0 };
-
+	vec2d t[3] = { 0, 0, 0 };
 	unsigned char R = 255; unsigned char G = 255; unsigned char B = 255;
 
 	float luminance = 0.0f;
