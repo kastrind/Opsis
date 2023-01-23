@@ -307,14 +307,14 @@ void draw(HDC hdc) {
                 Gdiplus::Bitmap bmpTexture(L"assets/brickwall.jpg");
                 Gdiplus::Color bmpColor;
 
-                std::vector<texel> texels = opsisEng3D->TexturedTriangle(tri.p[0].x, tri.p[0].y, tri.t[0].u, tri.t[0].v,
-                                                                                tri.p[1].x, tri.p[1].y, tri.t[1].u, tri.t[1].v,
-                                                                                tri.p[2].x, tri.p[2].y, tri.t[2].u, tri.t[2].v);
+                std::vector<texel> texels = opsisEng3D->TexturedTriangle(tri.p[0].x, tri.p[0].y, tri.t[0].u, tri.t[0].v, tri.t[0].w,
+                                                                         tri.p[1].x, tri.p[1].y, tri.t[1].u, tri.t[1].v, tri.t[1].w,
+                                                                         tri.p[2].x, tri.p[2].y, tri.t[2].u, tri.t[2].v, tri.t[2].w);
                 for (texel& txl : texels)
                 {
                     // texture coordinates
-                    int u = txl.t.u * bmpTexture.GetWidth();
-                    int v = txl.t.v * bmpTexture.GetHeight();
+                    int u = (txl.t.u / txl.t.w) * bmpTexture.GetWidth();
+                    int v = (txl.t.v / txl.t.w) * bmpTexture.GetHeight();
 
                     // screen coordinates
                     int x = txl.p.u;
@@ -331,7 +331,7 @@ void draw(HDC hdc) {
                     gf2->FillRectangle(&brushCustom, x, y, 1, 1);
                 }
 
-                gf2->DrawLines(&pen, points, 4);
+                //gf2->DrawLines(&pen, points, 4);
                 //gf2->FillPolygon(&brushShaded, points, 4);
                 
             }

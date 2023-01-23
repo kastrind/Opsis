@@ -172,7 +172,7 @@ struct vec3d
 struct triangle
 {
 	vec3d p[3] = { 0, 0, 0 }; // points
-	vec2d t[3] = { 0, 0, 0 }; // texture points
+	vec2d t[3] = { 0, 0 };    // texture points
 
 	unsigned char R = 255; unsigned char G = 255; unsigned char B = 255;
 
@@ -310,8 +310,10 @@ struct triangle
 			outTriangle1.t[0] = *inside_tex[0];
 			outTriangle1.t[1].u = t1 * (outside_tex[0]->u - inside_tex[0]->u) + inside_tex[0]->u;
 			outTriangle1.t[1].v = t1 * (outside_tex[0]->v - inside_tex[0]->v) + inside_tex[0]->v;
+			outTriangle1.t[1].w = t1 * (outside_tex[0]->w - inside_tex[0]->w) + inside_tex[0]->w;
 			outTriangle1.t[2].u = t2 * (outside_tex[1]->u - inside_tex[0]->u) + inside_tex[0]->u;
 			outTriangle1.t[2].v = t2 * (outside_tex[1]->v - inside_tex[0]->v) + inside_tex[0]->v;
+			outTriangle1.t[2].w = t2 * (outside_tex[1]->w - inside_tex[0]->w) + inside_tex[0]->w;
 
 			return 1; // Return the newly formed single triangle
 		}
@@ -342,6 +344,7 @@ struct triangle
 			outTriangle1.t[1] = *inside_tex[1];
 			outTriangle1.t[2].u = t1 * (outside_tex[0]->u - inside_tex[0]->u) + inside_tex[0]->u;
 			outTriangle1.t[2].v = t1 * (outside_tex[0]->v - inside_tex[0]->v) + inside_tex[0]->v;
+			outTriangle1.t[2].w = t1 * (outside_tex[0]->w - inside_tex[0]->w) + inside_tex[0]->w;
 
 			// The second triangle is composed of one of the inside points, a
 			// new point determined by the intersection of the other side of the 
@@ -356,6 +359,7 @@ struct triangle
 			outTriangle2.t[1] = outTriangle1.t[2];
 			outTriangle2.t[2].u = t2 * (outside_tex[0]->u - inside_tex[1]->u) + inside_tex[1]->u;
 			outTriangle2.t[2].v = t2 * (outside_tex[0]->v - inside_tex[1]->v) + inside_tex[1]->v;
+			outTriangle2.t[2].w = t2 * (outside_tex[0]->w - inside_tex[1]->w) + inside_tex[1]->w;
 
 			return 2; // Return two newly formed triangles which form a quad
 		}
@@ -404,9 +408,9 @@ class Engine3D
 
 		mat4x4 getRotMatrixZ(float fTheta);
 
-		std::vector<texel> TexturedTriangle(int x1, int y1, float u1, float v1,
-											int x2, int y2, float u2, float v2,
-											int x3, int y3, float u3, float v3);
+		std::vector<texel> TexturedTriangle(int x1, int y1, float u1, float v1, float w1,
+											int x2, int y2, float u2, float v2, float w2,
+											int x3, int y3, float u3, float v3, float w3);
 
 		std::atomic<bool> bAtomActive;
 
