@@ -7,7 +7,7 @@
 #include <gdiplus.h>
 #include "OpsisEngine3D.h"
 
-#define SCREENWIDTH  600
+#define SCREENWIDTH  800
 #define SCREENHEIGHT 600
 #define WINDOWNAME "Opsis"
 
@@ -304,8 +304,36 @@ void draw(HDC hdc) {
 
                 Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, r * tri.luminance, g * tri.luminance, b * tri.luminance));
 
+                Gdiplus::Bitmap bmpTexture(L"assets/brickwall.jpg");
+                Gdiplus::Color bmpColor;
+
+                std::vector<texel> texels = opsisEng3D->TexturedTriangle(tri.p[0].x, tri.p[0].y, tri.t[0].u, tri.t[0].v,
+                                                                                tri.p[1].x, tri.p[1].y, tri.t[1].u, tri.t[1].v,
+                                                                                tri.p[2].x, tri.p[2].y, tri.t[2].u, tri.t[2].v);
+                for (texel& txl : texels)
+                {
+                    // texture coordinates
+                    int u = txl.t.u * bmpTexture.GetWidth();
+                    int v = txl.t.v * bmpTexture.GetHeight();
+
+                    // screen coordinates
+                    int x = txl.p.u;
+                    int y = txl.p.v;
+
+                    // get "texel" value
+                    bmpTexture.GetPixel(u, v, &bmpColor);
+                    byte red = bmpColor.GetRed() * tri.luminance;
+                    byte green = bmpColor.GetGreen() * tri.luminance;
+                    byte blue = bmpColor.GetBlue() * tri.luminance;
+                    bmpColor.SetValue(Gdiplus::Color::MakeARGB(255, red, green, blue));
+                    Gdiplus::SolidBrush brushCustom(bmpColor);
+
+                    gf2->FillRectangle(&brushCustom, x, y, 1, 1);
+                }
+
                 gf2->DrawLines(&pen, points, 4);
-                gf2->FillPolygon(&brushShaded, points, 4);
+                //gf2->FillPolygon(&brushShaded, points, 4);
+                
             }
             opsisEng3D->bLockRaster = false;
         //}

@@ -23,10 +23,6 @@ public:
 
     vec3d light = { 0.0f, 0.0f, -1.0f };
 
-    float fYaw = 0;
-    float fPitch = 0;
-    vec3d vForward;
-
 private:
 
     mesh meshCube;
@@ -41,11 +37,12 @@ private:
 
     mat4x4 matCameraRotY90CW = getRotMatrixY(-1.57075f);
     mat4x4 matCameraRotY90CCW = getRotMatrixY(1.57075f);
+    
+    float fYaw = 0;
+    float fPitch = 0;
+
+    vec3d vForward;
     vec3d vRight;
     vec3d vLeft;
-
-
-
-
 
 };

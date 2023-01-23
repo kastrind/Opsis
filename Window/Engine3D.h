@@ -156,13 +156,13 @@ struct vec3d
 		return matrix;
 	}
 
-	inline vec3d intersectPlane(vec3d& planeNormal, vec3d& lineStart, vec3d& lineEnd)
+	inline vec3d intersectPlane(vec3d& planeNormal, vec3d& lineStart, vec3d& lineEnd, float& t)
 	{
 		planeNormal.normalize();
 		float planeNormalPointDP = -planeNormal.getDotProduct(*this);
 		float lineStartNormalDP = lineStart.getDotProduct(planeNormal);
 		float lineEndNormalDP = lineEnd.getDotProduct(planeNormal);
-		float t = (-planeNormalPointDP - lineStartNormalDP) / (lineEndNormalDP - lineStartNormalDP);
+		t = (-planeNormalPointDP - lineStartNormalDP) / (lineEndNormalDP - lineStartNormalDP);
 		vec3d lineStartToEnd = lineEnd - lineStart;
 		vec3d lineToIntersect = lineStartToEnd * t;
 		return lineStart + lineToIntersect;
@@ -171,8 +171,9 @@ struct vec3d
 
 struct triangle
 {
-	vec3d p[3] = { 0, 0, 0 };
-	vec2d t[3] = { 0, 0, 0 };
+	vec3d p[3] = { 0, 0, 0 }; // points
+	vec2d t[3] = { 0, 0, 0 }; // texture points
+
 	unsigned char R = 255; unsigned char G = 255; unsigned char B = 255;
 
 	float luminance = 0.0f;
@@ -232,6 +233,8 @@ struct triangle
 		// If distance sign is positive, point lies on "inside" of plane
 		vec3d* inside_points[3];  int nInsidePointCount = 0;
 		vec3d* outside_points[3]; int nOutsidePointCount = 0;
+		vec2d* inside_tex[3]; int nInsideTexCount = 0;
+		vec2d* outside_tex[3]; int nOutsideTexCount = 0;
 
 		// Get signed distance of each point in triangle to plane
 		float d0 = dist(p[0]);
@@ -242,12 +245,30 @@ struct triangle
 		//swprintf_s(s, 256, L"   d0= %3.2f d1= %3.2f d2= %3.2f", d0, d1, d2);
 		//OutputDebugString(s);
 
-		if (d0 >= 0) { inside_points[nInsidePointCount++] = &p[0]; }
-		else { outside_points[nOutsidePointCount++] = &p[0]; }
-		if (d1 >= 0) { inside_points[nInsidePointCount++] = &p[1]; }
-		else { outside_points[nOutsidePointCount++] = &p[1]; }
-		if (d2 >= 0) { inside_points[nInsidePointCount++] = &p[2]; }
-		else { outside_points[nOutsidePointCount++] = &p[2]; }
+		if (d0 >= 0) {
+			inside_points[nInsidePointCount++] = &p[0];
+			inside_tex[nInsideTexCount++] = &t[0];
+		}
+		else {
+			outside_points[nOutsidePointCount++] = &p[0];
+			outside_tex[nOutsideTexCount++] = &t[0];
+		}
+		if (d1 >= 0) {
+			inside_points[nInsidePointCount++] = &p[1];
+			inside_tex[nInsideTexCount++] = &t[1];
+		}
+		else {
+			outside_points[nOutsidePointCount++] = &p[1];
+			outside_tex[nOutsideTexCount++] = &t[1];
+		}
+		if (d2 >= 0) {
+			inside_points[nInsidePointCount++] = &p[2];
+			inside_tex[nInsideTexCount++] = &t[2];
+		}
+		else {
+			outside_points[nOutsidePointCount++] = &p[2];
+			outside_tex[nOutsideTexCount++] = &t[2];
+		}
 
 		// Now classify triangle points, and break the input triangle into 
 		// smaller output triangles if required. There are four possible
@@ -281,8 +302,16 @@ struct triangle
 
 			// but the two new points are at the locations where the 
 			// original sides of the triangle (lines) intersect with the plane
-			outTriangle1.p[1] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[0]);
-			outTriangle1.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[1]);
+			float  t1; float t2;
+			outTriangle1.p[1] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[0], t1);
+			outTriangle1.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[1], t2);
+
+			// Calculate texture coordinates from the points
+			outTriangle1.t[0] = *inside_tex[0];
+			outTriangle1.t[1].u = t1 * (outside_tex[0]->u - inside_tex[0]->u) + inside_tex[0]->u;
+			outTriangle1.t[1].v = t1 * (outside_tex[0]->v - inside_tex[0]->v) + inside_tex[0]->v;
+			outTriangle1.t[2].u = t2 * (outside_tex[1]->u - inside_tex[0]->u) + inside_tex[0]->u;
+			outTriangle1.t[2].v = t2 * (outside_tex[1]->v - inside_tex[0]->v) + inside_tex[0]->v;
 
 			return 1; // Return the newly formed single triangle
 		}
@@ -305,14 +334,28 @@ struct triangle
 			// intersects with the plane
 			outTriangle1.p[0] = *inside_points[0];
 			outTriangle1.p[1] = *inside_points[1];
-			outTriangle1.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[0]);
+			float t1;
+			outTriangle1.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[0], *outside_points[0], t1);
+
+			// Calculate texture coordinates from the points
+			outTriangle1.t[0] = *inside_tex[0];
+			outTriangle1.t[1] = *inside_tex[1];
+			outTriangle1.t[2].u = t1 * (outside_tex[0]->u - inside_tex[0]->u) + inside_tex[0]->u;
+			outTriangle1.t[2].v = t1 * (outside_tex[0]->v - inside_tex[0]->v) + inside_tex[0]->v;
 
 			// The second triangle is composed of one of the inside points, a
 			// new point determined by the intersection of the other side of the 
 			// triangle and the plane, and the newly created point above
 			outTriangle2.p[0] = *inside_points[1];
 			outTriangle2.p[1] = outTriangle1.p[2];
-			outTriangle2.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[1], *outside_points[0]);
+			float t2;
+			outTriangle2.p[2] = planePoint.intersectPlane(planeNormal, *inside_points[1], *outside_points[0], t2);
+
+			// Calculate texture coordinates from the points
+			outTriangle2.t[0] = *inside_tex[1];
+			outTriangle2.t[1] = outTriangle1.t[2];
+			outTriangle2.t[2].u = t2 * (outside_tex[0]->u - inside_tex[1]->u) + inside_tex[1]->u;
+			outTriangle2.t[2].v = t2 * (outside_tex[0]->v - inside_tex[1]->v) + inside_tex[1]->v;
 
 			return 2; // Return two newly formed triangles which form a quad
 		}
@@ -326,6 +369,12 @@ struct triangle
 struct mesh
 {
 	std::vector<triangle> tris;
+};
+
+struct texel
+{
+	vec2d t;
+	vec2d p;
 };
 
 class Engine3D
@@ -354,6 +403,10 @@ class Engine3D
 		mat4x4 getRotMatrixY(float fTheta);
 
 		mat4x4 getRotMatrixZ(float fTheta);
+
+		std::vector<texel> TexturedTriangle(int x1, int y1, float u1, float v1,
+											int x2, int y2, float u2, float v2,
+											int x3, int y3, float u3, float v3);
 
 		std::atomic<bool> bAtomActive;
 

@@ -32,7 +32,7 @@ bool OpsisEngine3D::OnUserCreate()
 
         // BOTTOM          																			  
         { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
-        { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,},
+        { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,}
 
     };
 
@@ -133,6 +133,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
         // Only render visible triangles, i.e. whose normals have negative dot product with the camera line
         if (normal.getDotProduct(camLine) < 0.0f)
         {
+
             // Illumination
             vec3d lightLine;
             lightLine = triViewed.p[0] - light;
@@ -146,6 +147,9 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             if (triProjected.p[1].w > 0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
             if (triProjected.p[2].w > 0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
 
+            triProjected.t[0] = triViewed.t[0];
+            triProjected.t[1] = triViewed.t[1];
+            triProjected.t[2] = triViewed.t[2];
 
             // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
             triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
@@ -173,6 +177,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             listTriangles.push_back(triProjected);
             int nNewTriangles = 1;
+            
             
             for (int p = 0; p < 5; p++)
             {
