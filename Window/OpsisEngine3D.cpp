@@ -6,8 +6,9 @@ OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
 }
 bool OpsisEngine3D::OnUserCreate()
 {
-    //loadObj("assets/teapot.obj", meshCube);
-
+    //loadObj("assets/teapot.obj", false, meshCube);
+    
+    
     meshCube.tris = {
 
         // SOUTH
@@ -115,7 +116,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
         // Translate further along Z
         triTranslated = triRotatedZX;
-        triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 5.0f };
+        triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 20.0f };
 
         // Convert to view space
         triViewed = triTranslated * matView;
@@ -131,7 +132,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
         camLine = triTranslated.p[0] - vCamera;
 
         // Only render visible triangles, i.e. whose normals have negative dot product with the camera line
-        if (normal.getDotProduct(camLine) < 0.0f)
+        if (normal.getDotProduct(camLine) <= 0.0f)
         {
 
             // Illumination
@@ -149,21 +150,21 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             triProjected.t[2] = triViewed.t[2];
 
             // Perspective correction for texture vertices
-            triProjected.t[0].u = triProjected.t[0].u / triProjected.p[0].w;
-            triProjected.t[1].u = triProjected.t[1].u / triProjected.p[1].w;
-            triProjected.t[2].u = triProjected.t[2].u / triProjected.p[2].w;
+            if (triProjected.p[0].w > 0) triProjected.t[0].u = triProjected.t[0].u / triProjected.p[0].w;
+            if (triProjected.p[1].w > 0) triProjected.t[1].u = triProjected.t[1].u / triProjected.p[1].w;
+            if (triProjected.p[2].w > 0) triProjected.t[2].u = triProjected.t[2].u / triProjected.p[2].w;
 
-            triProjected.t[0].v = triProjected.t[0].v / triProjected.p[0].w;
-            triProjected.t[1].v = triProjected.t[1].v / triProjected.p[1].w;
-            triProjected.t[2].v = triProjected.t[2].v / triProjected.p[2].w;
+            if (triProjected.p[0].w > 0) triProjected.t[0].v = triProjected.t[0].v / triProjected.p[0].w;
+            if (triProjected.p[1].w > 0) triProjected.t[1].v = triProjected.t[1].v / triProjected.p[1].w;
+            if (triProjected.p[2].w > 0) triProjected.t[2].v = triProjected.t[2].v / triProjected.p[2].w;
 
-            triProjected.t[0].w = 1.0f / triProjected.p[0].w;
-            triProjected.t[1].w = 1.0f / triProjected.p[1].w;
-            triProjected.t[2].w = 1.0f / triProjected.p[2].w;
+            if (triProjected.p[0].w > 0) triProjected.t[0].w = 1.0f / triProjected.p[0].w;
+            if (triProjected.p[1].w > 0) triProjected.t[1].w = 1.0f / triProjected.p[1].w;
+            if (triProjected.p[2].w > 0) triProjected.t[2].w = 1.0f / triProjected.p[2].w;
 
-            triProjected.p[0] = triProjected.p[0] / triProjected.p[0].w;
-            triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
-            triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
+            if (triProjected.p[0].w > 0) triProjected.p[0] = triProjected.p[0] / triProjected.p[0].w;
+            if (triProjected.p[1].w > 0) triProjected.p[1] = triProjected.p[1] / triProjected.p[1].w;
+            if (triProjected.p[2].w > 0) triProjected.p[2] = triProjected.p[2] / triProjected.p[2].w;
 
             // Convert to screen coords: -1...+1 => 0...2 and adjust it with halved screen dimensions
             triProjected = triProjected + vec3d{ 1, 1, 0, 0 };
@@ -191,7 +192,6 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             listTriangles.push_back(triProjected);
             int nNewTriangles = 1;
-            
             
             for (int p = 0; p < 5; p++)
             {

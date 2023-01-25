@@ -290,6 +290,9 @@ void draw(HDC hdc) {
     wchar_t s[256];
     unsigned char r = 0; unsigned char g = 0; unsigned char b = 0;
 
+    Gdiplus::Bitmap bmpTexture(L"assets/brickwall.jpg");
+    Gdiplus::Color bmpColor;
+
     if (opsisEng3D != nullptr) {
         //for (int i = 0; i < 1000; i++) {
             opsisEng3D->bLockRaster = true;
@@ -304,12 +307,12 @@ void draw(HDC hdc) {
 
                 Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, r * tri.luminance, g * tri.luminance, b * tri.luminance));
 
-                Gdiplus::Bitmap bmpTexture(L"assets/brickwall.jpg");
-                Gdiplus::Color bmpColor;
-
+                
+                 
                 std::vector<texel> texels = opsisEng3D->TexturedTriangle(tri.p[0].x, tri.p[0].y, tri.t[0].u, tri.t[0].v, tri.t[0].w,
                                                                          tri.p[1].x, tri.p[1].y, tri.t[1].u, tri.t[1].v, tri.t[1].w,
                                                                          tri.p[2].x, tri.p[2].y, tri.t[2].u, tri.t[2].v, tri.t[2].w);
+
                 for (texel& txl : texels)
                 {
                     // texture coordinates
@@ -322,6 +325,7 @@ void draw(HDC hdc) {
 
                     // get "texel" value
                     bmpTexture.GetPixel(u, v, &bmpColor);
+                    
                     byte red = bmpColor.GetRed() * tri.luminance;
                     byte green = bmpColor.GetGreen() * tri.luminance;
                     byte blue = bmpColor.GetBlue() * tri.luminance;

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <strstream>
 #include <algorithm>
+#include <string>
 #include "windows.h"
 
 struct mat4x4
@@ -396,7 +397,7 @@ class Engine3D
 		// Optional for clean up 
 		virtual bool OnUserDestroy();
 
-		bool loadObj(std::string sFilename, mesh& outMesh);
+		bool loadObj(std::string sFilename, bool bHasTexture, mesh& outMesh);
 
 		mat4x4 getProjMatrix();
 
