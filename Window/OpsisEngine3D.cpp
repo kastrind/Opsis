@@ -6,9 +6,11 @@ OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
 }
 bool OpsisEngine3D::OnUserCreate()
 {
-    //loadObj("assets/teapot.obj", false, meshCube);
+    pDepthBuffer = new float[width * height];
+
+    loadObj("assets/VideoShip.obj", false, meshCube);
     
-    
+    /*
     meshCube.tris = {
 
         // SOUTH
@@ -35,7 +37,7 @@ bool OpsisEngine3D::OnUserCreate()
         { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
         { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		1.0f, 0.0f, 1.0f,		1.0f, 1.0f, 1.0f,}
 
-    };
+    };*/
 
     return true;
 }
@@ -86,6 +88,12 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     mat4x4 matRotZ = getRotMatrixZ(fTheta);
     mat4x4 matRotX = getRotMatrixX(fTheta);
 
+    mat4x4 matTrans = getTranslMatrix(0.0f, 0.0f, 5.0f);
+
+    mat4x4 matWorld = matTrans;
+    matWorld = matWorld * matRotZ;
+    matWorld = matWorld * matRotX;
+    matWorld = matTrans * matWorld;
 
     // Create "point at" matrix for camera
     vUp = { 0, 1, 0 };
@@ -97,7 +105,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     vTarget = vCamera + vLookDir;
     mat4x4 matCamera = vCamera.pointAt(vTarget, vUp);
 
-    light = { 0.0f, 0.0f, -1.0f };
+    light = { 0.0f, 1.0f, -1.0f };
 
     mat4x4 matView = matCamera.invertRotationOrTranslationMatrix();
 
@@ -106,41 +114,34 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     // Project triangles into camera view
     for (auto &tri : meshCube.tris)
     {
-        triangle triRotatedZ, triRotatedZX, triTranslated, triViewed, triProjected;
+        triangle triTranslated, triViewed, triProjected;
 
-        // Rotate in Z
-        triRotatedZ = tri * matRotZ;
-
-        // Rotate in X
-        triRotatedZX = triRotatedZ * matRotX;
-
-        // Translate further along Z
-        triTranslated = triRotatedZX;
-        triTranslated = triRotatedZX + vec3d{ 0.0f, 0.0f, 20.0f };
-
-        // Convert to view space
-        triViewed = triTranslated * matView;
+        triTranslated = tri * matWorld;
 
         vec3d normal, line1, line2;
-        line1 = triViewed.p[1] - triViewed.p[0];
-        line2 = triViewed.p[2] - triViewed.p[0];
+        line1 = triTranslated.p[1] - triTranslated.p[0];
+        line2 = triTranslated.p[2] - triTranslated.p[0];
 
         normal = line1.getNormal(line2);
         normal.normalize();
 
         vec3d camLine;
         camLine = triTranslated.p[0] - vCamera;
+        camLine.normalize();
 
         // Only render visible triangles, i.e. whose normals have negative dot product with the camera line
-        if (normal.getDotProduct(camLine) <= 0.0f)
+        if (normal.getDotProduct(camLine) < 0.0f)
         {
-
             // Illumination
             vec3d lightLine;
-            lightLine = triViewed.p[0] - light;
+            lightLine = triTranslated.p[0] - light;
             lightLine.normalize();
 
-            triViewed.luminance = max(0.2f, abs(normal.getDotProduct(lightLine)));
+            //camLine.normalize();
+            triTranslated.luminance = max(0.2f, abs(normal.getDotProduct(lightLine)));
+
+            // Convert to view space
+            triViewed = triTranslated * matView;
 
             // Project triangles from 3D -> 2D
             triProjected = triViewed * matProj;
@@ -239,12 +240,12 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     }
 
     //Sort triangles from back to front
-    std::sort(trianglesToProject.begin(), trianglesToProject.end(), [](triangle& t1, triangle& t2)
-        {
-            float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
-            float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
-            return z1 > z2;
-        });
+    //std::sort(trianglesToProject.begin(), trianglesToProject.end(), [](triangle& t1, triangle& t2)
+    //    {
+    //        float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
+    //        float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
+    //        return z1 > z2;
+    //    });
 
     if (!bLockRaster)
     {

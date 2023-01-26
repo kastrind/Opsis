@@ -296,6 +296,7 @@ void draw(HDC hdc) {
     if (opsisEng3D != nullptr) {
         //for (int i = 0; i < 1000; i++) {
             opsisEng3D->bLockRaster = true;
+
             for (auto &tri : opsisEng3D->trianglesToRaster)
             {
                 Gdiplus::PointF point1(tri.p[0].x, tri.p[0].y);
@@ -306,9 +307,7 @@ void draw(HDC hdc) {
                 r = tri.R; g = tri.G; b = tri.B;
 
                 Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, r * tri.luminance, g * tri.luminance, b * tri.luminance));
-
                 
-                 
                 std::vector<texel> texels = opsisEng3D->TexturedTriangle(tri.p[0].x, tri.p[0].y, tri.t[0].u, tri.t[0].v, tri.t[0].w,
                                                                          tri.p[1].x, tri.p[1].y, tri.t[1].u, tri.t[1].v, tri.t[1].w,
                                                                          tri.p[2].x, tri.p[2].y, tri.t[2].u, tri.t[2].v, tri.t[2].w);
@@ -340,6 +339,7 @@ void draw(HDC hdc) {
                 
             }
             opsisEng3D->bLockRaster = false;
+            opsisEng3D->clearDepthBuffer();
         //}
 
             swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);

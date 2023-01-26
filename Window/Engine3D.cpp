@@ -79,16 +79,26 @@ mat4x4 Engine3D::getProjMatrix()
 	return matProj;
 }
 
+mat4x4 Engine3D::getIdMatrix()
+{
+	mat4x4 matId;
+	matId.m[0][0] = 1.0f;
+	matId.m[1][1] = 1.0f;
+	matId.m[2][2] = 1.0f;
+	matId.m[3][3] = 1.0f;
+	return matId;
+}
+
 mat4x4 Engine3D::getTranslMatrix(float x, float y, float z)
 {
 	mat4x4 matTransl;
-	matProj.m[0][0] = 1.0f;
-	matProj.m[1][1] = 1.0f;
-	matProj.m[2][2] = 1.0f;
-	matProj.m[3][3] = 1.0f;
-	matProj.m[3][0] = x;
-	matProj.m[3][1] = y;
-	matProj.m[3][2] = z;
+	matTransl.m[0][0] = 1.0f;
+	matTransl.m[1][1] = 1.0f;
+	matTransl.m[2][2] = 1.0f;
+	matTransl.m[3][3] = 1.0f;
+	matTransl.m[3][0] = x;
+	matTransl.m[3][1] = y;
+	matTransl.m[3][2] = z;
 	return matTransl;
 }
 
@@ -128,42 +138,6 @@ mat4x4 Engine3D::getRotMatrixZ(float fTheta)
 	return matRotZ;
 }
 
-
-bool Engine3D::loadObj(std::string sFilename, bool bTemp, mesh& outMesh) {
-	std::ifstream f(sFilename);
-	if (!f.is_open())
-		return false;
-
-	std::vector<vec3d> verts;
-
-	while (!f.eof())
-	{
-		char line[128];
-		f.getline(line, 128);
-
-		std::strstream s;
-		s << line;
-
-		char junk;
-		if (line[0] == 'v')
-		{
-			vec3d v;
-			s >> junk >> v.x >> v.y >> v.z;
-			verts.push_back(v);
-		}
-
-		if (line[0] == 'f')
-		{
-			int f[3];
-			s >> junk >> f[0] >> f[1] >> f[2];
-			outMesh.tris.push_back({ verts[f[0] - 1], verts[f[1] - 1], verts[f[2] - 1] });
-		}
-	}
-	return false;
-
-}
-
-/*
 bool Engine3D::loadObj(std::string sFilename, bool bHasTexture, mesh& outMesh) {
 	std::ifstream f(sFilename);
 	if (!f.is_open())
@@ -242,7 +216,7 @@ bool Engine3D::loadObj(std::string sFilename, bool bHasTexture, mesh& outMesh) {
 	}
 	return true;
 }
-*/
+
 
 std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1, float w1,
 											  int x2, int y2, float u2, float v2, float w2,
@@ -339,6 +313,11 @@ std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1
 				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
 				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
 
+				t += tstep;
+
+				if (tex_w <= pDepthBuffer[i * width + j]) continue;
+				else pDepthBuffer[i * width + j] = tex_w;
+
 				vec2d tx;
 				tx.u = tex_u;
 				tx.v = tex_v;
@@ -353,8 +332,6 @@ std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1
 				txl.p = p;
 
 				out.push_back(txl);
-
-				t += tstep;
 			}
 
 		}
@@ -410,6 +387,11 @@ std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1
 				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
 				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
 
+				t += tstep;
+
+				if (tex_w <= pDepthBuffer[i * width + j]) continue;
+				else pDepthBuffer[i * width + j] = tex_w;
+
 				vec2d tx;
 				tx.u = tex_u;
 				tx.v = tex_v;
@@ -425,13 +407,20 @@ std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1
 
 				out.push_back(txl);
 
-				t += tstep;
+
 			}
 
 		}
 	}
 
 	return out;
+}
+
+void Engine3D::clearDepthBuffer()
+{
+	// Clear Depth Buffer
+	for (int i = 0; i < width * height; i++)
+		pDepthBuffer[i] = 0.0f;
 }
 
 

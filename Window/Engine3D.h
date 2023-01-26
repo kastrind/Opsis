@@ -365,7 +365,6 @@ struct triangle
 			return 2; // Return two newly formed triangles which form a quad
 		}
 
-
 		return -1;
 	}
 
@@ -401,6 +400,8 @@ class Engine3D
 
 		mat4x4 getProjMatrix();
 
+		mat4x4 getIdMatrix();
+
 		mat4x4 getTranslMatrix(float x, float y, float z);
 
 		mat4x4 getRotMatrixX(float fTheta);
@@ -419,6 +420,8 @@ class Engine3D
 
 		float fElapsedTime;
 
+		void clearDepthBuffer();
+
 	protected:
 
 		HWND hWnd;
@@ -431,6 +434,8 @@ class Engine3D
 		float fFovRad;
 
 		mat4x4 matProj;
+
+		float* pDepthBuffer = nullptr;
 	
 	private:
 
