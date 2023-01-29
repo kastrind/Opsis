@@ -18,7 +18,6 @@ Engine3D::Engine3D(HWND hWnd, int width, int height, float fNear, float fFar, fl
 
 std::thread Engine3D::Start() {
 	bAtomActive = true;
-	bLockRaster = false;
 
 	// Start the thread
 	std::thread t = std::thread::thread(&Engine3D::EngineThread, this);
@@ -218,11 +217,25 @@ bool Engine3D::loadObj(std::string sFilename, bool bHasTexture, mesh& outMesh) {
 }
 
 
-std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1, float w1,
-											  int x2, int y2, float u2, float v2, float w2,
-											  int x3, int y3, float u3, float v3, float w3) {
+std::vector<texturePoint> Engine3D::textureTriangle(triangle& tri) {
 
-	std::vector<texel> out;
+	int x1 = tri.p[0].x;
+	int y1 = tri.p[0].y;
+	float u1 = tri.t[0].u;
+	float v1 = tri.t[0].v;
+	float w1 = tri.t[0].w;
+	int x2 = tri.p[1].x;
+	int y2 = tri.p[1].y;
+	float u2 = tri.t[1].u;
+	float v2 = tri.t[1].v;
+	float w2 = tri.t[1].w;
+	int x3 = tri.p[2].x;
+	int y3 = tri.p[2].y;
+	float u3 = tri.t[2].u;
+	float v3 = tri.t[2].v;
+	float w3 = tri.t[2].w;
+
+	std::vector<texturePoint> out;
 
 	if (y2 < y1)
 	{
@@ -327,11 +340,11 @@ std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1
 				p.u = j;
 				p.v = i;
 
-				texel txl;
-				txl.t = tx;
-				txl.p = p;
+				texturePoint tp;
+				tp.t = tx;
+				tp.p = p;
 
-				out.push_back(txl);
+				out.push_back(tp);
 			}
 
 		}
@@ -401,11 +414,11 @@ std::vector<texel> Engine3D::TexturedTriangle(int x1, int y1, float u1, float v1
 				p.u = j;
 				p.v = i;
 
-				texel txl;
-				txl.t = tx;
-				txl.p = p;
+				texturePoint tp;
+				tp.t = tx;
+				tp.p = p;
 
-				out.push_back(txl);
+				out.push_back(tp);
 
 
 			}

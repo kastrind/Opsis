@@ -4,12 +4,14 @@
 #include <list>
 #include <thread>
 #include <atomic>
+#include <mutex>
 #include <chrono>
 #include <fstream>
 #include <strstream>
 #include <algorithm>
 #include <string>
 #include "windows.h"
+#include <gdiplus.h>
 
 struct mat4x4
 {
@@ -170,6 +172,12 @@ struct vec3d
 	}
 };
 
+struct texturePoint
+{
+	vec2d t;
+	vec2d p;
+};
+
 struct triangle
 {
 	vec3d p[3] = { 0, 0, 0 }; // points
@@ -178,6 +186,8 @@ struct triangle
 	unsigned char R = 255; unsigned char G = 255; unsigned char B = 255;
 
 	float luminance = 0.0f;
+
+	std::vector<texturePoint> texturePoints;
 
 	inline triangle operator+(const vec3d& in) {
 		triangle out;
@@ -375,10 +385,9 @@ struct mesh
 	std::vector<triangle> tris;
 };
 
-struct texel
-{
-	vec2d t;
-	vec2d p;
+struct model {
+	mesh modelMesh;
+	Gdiplus::Bitmap* modelTexture = nullptr;
 };
 
 class Engine3D
@@ -410,9 +419,7 @@ class Engine3D
 
 		mat4x4 getRotMatrixZ(float fTheta);
 
-		std::vector<texel> TexturedTriangle(int x1, int y1, float u1, float v1, float w1,
-											int x2, int y2, float u2, float v2, float w2,
-											int x3, int y3, float u3, float v3, float w3);
+		std::vector<texturePoint> textureTriangle(triangle& tri);
 
 		std::atomic<bool> bAtomActive;
 

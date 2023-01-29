@@ -10,6 +10,8 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override;
 
+    std::mutex mtx;
+
     std::vector<triangle> trianglesToRaster;
 
     bool bWKeyHeld = false;
@@ -23,9 +25,13 @@ public:
 
     vec3d light = { 0.0f, 0.0f, -1.0f };
 
+    Gdiplus::Bitmap* texture = nullptr;
+
+    model mdl;
+
 private:
 
-    mesh meshCube;
+    mesh meshObj;
 
     float fTheta = 0;
 

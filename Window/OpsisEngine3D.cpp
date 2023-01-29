@@ -1,17 +1,20 @@
-#include "OpsisEngine3D.h"
+#include "OpsisEngine3D.h";
 
 
 OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
     : Engine3D(hWnd, width, height) {
+    texture = nullptr;
 }
+
 bool OpsisEngine3D::OnUserCreate()
 {
     pDepthBuffer = new float[width * height];
-
-    loadObj("assets/VideoShip.obj", false, meshCube);
     
+    loadObj("assets/VideoShip.obj", false, mdl.modelMesh);
+    mdl.modelTexture = new Gdiplus::Bitmap(L"assets/brickwall.jpg");
+
     /*
-    meshCube.tris = {
+    mdl.modelMesh.tris = {
 
         // SOUTH
         { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 1.0f,},
@@ -41,6 +44,7 @@ bool OpsisEngine3D::OnUserCreate()
 
     return true;
 }
+
 bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 {
     //fTheta += 1.0f * fElapsedTime;
@@ -111,8 +115,11 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
     std::vector<triangle> trianglesToProject;
 
+    std::vector<texturePoint> texturePointsToRasterTmp;
+    clearDepthBuffer();
+
     // Project triangles into camera view
-    for (auto &tri : meshCube.tris)
+    for (auto &tri : mdl.modelMesh.tris)
     {
         triangle triTranslated, triViewed, triProjected;
 
@@ -231,9 +238,11 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
                 }
                 nNewTriangles = listTriangles.size();
             }
-
+            
             for (auto& triProjected : listTriangles)
             {
+                std::vector<texturePoint> texturePoints = textureTriangle(triProjected);
+                triProjected.texturePoints = texturePoints;
                 trianglesToProject.push_back(triProjected);
             }
         }
@@ -247,10 +256,9 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     //        return z1 > z2;
     //    });
 
-    if (!bLockRaster)
-    {
-        trianglesToRaster = trianglesToProject;
-    }
+    mtx.lock();
+    trianglesToRaster = trianglesToProject;
+    mtx.unlock();   
 
     return true;
 }
