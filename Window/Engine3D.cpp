@@ -50,7 +50,7 @@ void Engine3D::EngineThread()
 			if (!OnUserUpdate(fElapsedTime))
 				bAtomActive = false;
 
-			if (!bLockRaster) RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
+			RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE);
 
 		}
 
@@ -328,8 +328,8 @@ std::vector<texturePoint> Engine3D::textureTriangle(triangle& tri) {
 
 				t += tstep;
 
-				if (tex_w <= pDepthBuffer[i * width + j]) continue;
-				else pDepthBuffer[i * width + j] = tex_w;
+				//if (tex_w <= pDepthBuffer[i * width + j]) continue;
+				//else pDepthBuffer[i * width + j] = tex_w;
 
 				vec2d tx;
 				tx.u = tex_u;
@@ -402,8 +402,8 @@ std::vector<texturePoint> Engine3D::textureTriangle(triangle& tri) {
 
 				t += tstep;
 
-				if (tex_w <= pDepthBuffer[i * width + j]) continue;
-				else pDepthBuffer[i * width + j] = tex_w;
+				//if (tex_w <= pDepthBuffer[i * width + j]) continue;
+				//else pDepthBuffer[i * width + j] = tex_w;
 
 				vec2d tx;
 				tx.u = tex_u;

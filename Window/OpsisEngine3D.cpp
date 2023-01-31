@@ -3,7 +3,8 @@
 
 OpsisEngine3D::OpsisEngine3D(HWND hWnd, int width, int height)
     : Engine3D(hWnd, width, height) {
-    texture = nullptr;
+
+    tTextureManager = std::thread::thread(&OpsisEngine3D::manageTexturers, this);
 }
 
 bool OpsisEngine3D::OnUserCreate()
@@ -94,7 +95,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
     mat4x4 matTrans = getTranslMatrix(0.0f, 0.0f, 5.0f);
 
-    mat4x4 matWorld = matTrans;
+    matWorld = matTrans;
     matWorld = matWorld * matRotZ;
     matWorld = matWorld * matRotX;
     matWorld = matTrans * matWorld;
@@ -111,19 +112,52 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
     light = { 0.0f, 1.0f, -1.0f };
 
-    mat4x4 matView = matCamera.invertRotationOrTranslationMatrix();
+    matView = matCamera.invertRotationOrTranslationMatrix();
+
+    //clearDepthBuffer();
+    rasterize();
+
+    return true;
+}
+
+
+void OpsisEngine3D::manageTexturers()
+{
+
+    while (true)
+    {
+        Sleep(1);
+        if (bUpdated) break;
+    }   
+
+    tTrisProducer = std::thread::thread(&OpsisEngine3D::produceTris, this);
+
+    tTexturer[0] = std::thread::thread(&OpsisEngine3D::texture, this);
+
+    tTexturer[1] = std::thread::thread(&OpsisEngine3D::texture, this);
+    tTexturer[2] = std::thread::thread(&OpsisEngine3D::texture, this);
+    tTexturer[3] = std::thread::thread(&OpsisEngine3D::texture, this);
+
+}
+
+void OpsisEngine3D::rasterize()
+{
+    //clippedTriangles.clear();
 
     std::vector<triangle> trianglesToProject;
 
     std::vector<texturePoint> texturePointsToRasterTmp;
-    clearDepthBuffer();
+
+    mat4x4 matWorldCopy = matWorld;
+    mat4x4 matViewCopy = matView;
 
     // Project triangles into camera view
-    for (auto &tri : mdl.modelMesh.tris)
+    for (auto& tri : mdl.modelMesh.tris)
     {
-        triangle triTranslated, triViewed, triProjected;
 
-        triTranslated = tri * matWorld;
+        triangle triTranslated, triViewed, triProjected;  
+
+        triTranslated = tri * matWorldCopy;
 
         vec3d normal, line1, line2;
         line1 = triTranslated.p[1] - triTranslated.p[0];
@@ -148,7 +182,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
             triTranslated.luminance = max(0.2f, abs(normal.getDotProduct(lightLine)));
 
             // Convert to view space
-            triViewed = triTranslated * matView;
+            triViewed = triTranslated * matViewCopy;
 
             // Project triangles from 3D -> 2D
             triProjected = triViewed * matProj;
@@ -182,11 +216,12 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             // Clip Viewed Triangle against near plane and screen edges. This could form additional triangles. 
             triangle clipped[2];
-            std::list<triangle> listTriangles;
+            //std::list<triangle> listTriangles;
+
             vec3d planeTop = { 0.0f, 0.0f, 0.0f };
             vec3d planeTopNormal = { 0.0f, 1.0f, 0.0f };
 
-            vec3d planeBottom = { 0.0f, (float)height -1.0f, 0.0f};
+            vec3d planeBottom = { 0.0f, (float)height - 1.0f, 0.0f };
             vec3d planeBottomNormal = { 0.0f, -1.0f, 0.0f };
 
             vec3d planeLeft = { 0.0f, 0.0f, 0.0f };
@@ -200,7 +235,7 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
 
             listTriangles.push_back(triProjected);
             int nNewTriangles = 1;
-            
+
             for (int p = 0; p < 5; p++)
             {
                 int nTrisToAdd = 0;
@@ -219,15 +254,15 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
                     switch (p)
                     {
                     case 0:	nTrisToAdd = test.clipAgainstPlane(planeTop, planeTopNormal, clipped[0], clipped[1]); break;
-                    //case 0: nTrisToAdd = 1; clipped[0] = test; break;
+                        //case 0: nTrisToAdd = 1; clipped[0] = test; break;
                     case 1:	nTrisToAdd = test.clipAgainstPlane(planeBottom, planeBottomNormal, clipped[0], clipped[1]); break;
-                    //case 1: nTrisToAdd = 1; clipped[0] = test; break;
+                        //case 1: nTrisToAdd = 1; clipped[0] = test; break;
                     case 2:	nTrisToAdd = test.clipAgainstPlane(planeLeft, planeLeftNormal, clipped[0], clipped[1]); break;
-                    //case 2: nTrisToAdd = 1; clipped[0] = test; break;
+                        //case 2: nTrisToAdd = 1; clipped[0] = test; break;
                     case 3:	nTrisToAdd = test.clipAgainstPlane(planeRight, planeRightNormal, clipped[0], clipped[1]); break;
-                    //case 3: nTrisToAdd = 1; clipped[0] = test; break;
+                        //case 3: nTrisToAdd = 1; clipped[0] = test; break;
                     case 4: nTrisToAdd = test.clipAgainstPlane(nearPlane, nearPlaneNormal, clipped[0], clipped[1]);
-                    //case 4: nTrisToAdd = 1; clipped[0] = test; break;
+                        //case 4: nTrisToAdd = 1; clipped[0] = test; break;
                     }
 
                     // Clipping may yield a variable number of triangles, so
@@ -238,15 +273,29 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
                 }
                 nNewTriangles = listTriangles.size();
             }
-            
-            for (auto& triProjected : listTriangles)
-            {
-                std::vector<texturePoint> texturePoints = textureTriangle(triProjected);
-                triProjected.texturePoints = texturePoints;
-                trianglesToProject.push_back(triProjected);
-            }
+
+            //mtx.lock();
+            ////clearDepthBuffer();
+            //for (auto& triProjected : listTriangles)
+            //{
+            //    clippedTriangles.push_back(triProjected);
+
+            //    //std::vector<texturePoint> texturePoints = textureTriangle(triProjected);
+            //    //triProjected.texturePoints = texturePoints;
+            //    //trianglesToProject.push_back(triProjected);
+            //}
+            //OutputDebugString(L"PRODUCED_TRIS!_____");
+            //mtx.unlock();
+
         }
+
     }
+    mtx.lock();
+    //finalListTriangles.insert(finalListTriangles.begin(), listTriangles.begin(), listTriangles.end());
+    finalListTriangles = listTriangles;
+    listTriangles.clear();
+    mtx.unlock();
+    bUpdated = true;
 
     //Sort triangles from back to front
     //std::sort(trianglesToProject.begin(), trianglesToProject.end(), [](triangle& t1, triangle& t2)
@@ -256,9 +305,68 @@ bool OpsisEngine3D::OnUserUpdate(float fElapsedTime)
     //        return z1 > z2;
     //    });
 
-    mtx.lock();
-    trianglesToRaster = trianglesToProject;
-    mtx.unlock();   
+    //mtx.lock();
+    //trianglesToRaster = trianglesToProject;
+    //mtx.unlock();
+}
 
-    return true;
+void OpsisEngine3D::produceTris()
+{
+    while (true) {
+
+        mtx.lock();
+        if (finalListTriangles.size())
+        {
+            //clearDepthBuffer();
+            for (auto& triProjected : finalListTriangles)
+            {
+                clippedTriangles.push_back(triProjected);
+            }
+            finalListTriangles.clear();
+            OutputDebugString(L"PRODUCED_TRIS!_____");
+        }
+        mtx.unlock();
+    }
+}
+
+
+void OpsisEngine3D::texture()
+{
+    triangle tri;
+    triangle tri2;
+    bool existsTri = false;
+    while (true) {
+
+        mtx.lock();
+
+        if (clippedTriangles.size())
+        {
+            refreshedFinalTris = false;
+            tri = clippedTriangles.back();
+            tri2 = { {tri.p[0], tri.p[1], tri.p[2]}, {tri.t[0], tri.t[1], tri.t[2]}, tri.R, tri.G, tri.B, tri.luminance };
+            clippedTriangles.pop_back();
+            existsTri = true;
+        }
+        else if (trianglesToRaster.size() && !refreshedFinalTris)
+        {
+            finalTrianglesToRaster = trianglesToRaster;
+            refreshedFinalTris = true;
+            OutputDebugString(L"REFRESHED_FINAL_TRIS!_____");
+        }
+        if (clippedTriangles.size()==1) {
+            OutputDebugString(L"CONSUMED_TRIS!_____");
+            //clearDepthBuffer();
+        }
+        mtx.unlock();
+
+        if (existsTri)
+        {   
+            tri2.texturePoints = textureTriangle(tri2);
+            mtx.lock();
+            trianglesToRaster.push_back(tri2);
+            mtx.unlock();
+        }
+        existsTri = false;
+        
+    }
 }

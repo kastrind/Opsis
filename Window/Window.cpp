@@ -292,16 +292,18 @@ void draw(HDC hdc) {
 
     Gdiplus::Color bmpColor;
 
-    if (opsisEng3D != nullptr && opsisEng3D->mdl.modelTexture != nullptr) {
+    if (opsisEng3D != nullptr) {
+        opsisEng3D->bLockRaster = true;
 
         //for (int i = 0; i < 1000; i++) {
 
-            opsisEng3D->mtx.lock();
-            std::vector<triangle> tris = opsisEng3D->trianglesToRaster;
-            opsisEng3D->mtx.unlock();
-
             int modelWidth  = opsisEng3D->mdl.modelTexture->GetWidth();
             int modelHeight = opsisEng3D->mdl.modelTexture->GetHeight();
+
+
+            opsisEng3D->mtx.lock();
+            std::vector<triangle> tris = opsisEng3D->finalTrianglesToRaster;
+            opsisEng3D->mtx.unlock();
 
             for (triangle& tri : tris)
             {
@@ -315,6 +317,8 @@ void draw(HDC hdc) {
                 Gdiplus::SolidBrush brushShaded(Gdiplus::Color(255, r * tri.luminance, g * tri.luminance, b * tri.luminance));
                 //gf2->DrawLines(&pen, points, 4);
                 //gf2->FillPolygon(&brushShaded, points, 4);
+
+                if (opsisEng3D->mdl.modelTexture == nullptr) continue;
                 
                 std::vector<texturePoint> tps = tri.texturePoints;
                 for (texturePoint& tp : tps)
@@ -326,10 +330,10 @@ void draw(HDC hdc) {
                     // screen coordinates
                     int x = tp.p.u;
                     int y = tp.p.v;
-                    
+
                     // get texture pixel value
                     opsisEng3D->mdl.modelTexture->GetPixel(u, v, &bmpColor);
-                    
+
                     byte red = bmpColor.GetRed() * tri.luminance;
                     byte green = bmpColor.GetGreen() * tri.luminance;
                     byte blue = bmpColor.GetBlue() * tri.luminance;
@@ -340,9 +344,12 @@ void draw(HDC hdc) {
                 }
 
             }
+            opsisEng3D->mtx.lock();
+            opsisEng3D->trianglesToRaster.clear();
+            opsisEng3D->mtx.unlock();
 
         //}
-
+            opsisEng3D->bLockRaster = false;
             swprintf_s(s, 256, L"EngineLoops: %3.2f / FPS: %3.2f", 1.0f / opsisEng3D->fElapsedTime, 1.0f / fElapsedTime);
     }
 

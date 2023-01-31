@@ -423,8 +423,6 @@ class Engine3D
 
 		std::atomic<bool> bAtomActive;
 
-		std::atomic<bool> bLockRaster = false;
-
 		float fElapsedTime;
 
 		void clearDepthBuffer();
